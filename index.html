@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Smart Stay — Login & Register</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --bg-color: #f3f4f6;
+    --card-bg: #ffffff;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --error: #ef4444;
+    --success: #10b981;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background-color: var(--bg-color);
+    background-image: url('aryabhatta.jpg');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    background-attachment: fixed;
+    position: relative;
+    z-index: 1;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+  }
+  .auth-container {
+    background: var(--card-bg);
+    width: 100%;
+    max-width: 440px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+  }
+  .auth-header {
+    text-align: center;
+    padding: 32px 24px 20px;
+  }
+  .brand-icon {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+  .brand-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+  }
+  .brand-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+  }
+  .auth-body {
+    padding: 24px;
+  }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .row {
+    display: flex;
+    gap: 12px;
+  }
+  .row .form-group { flex: 1; }
+  label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--text-main);
+  }
+  input {
+    width: 100%;
+    padding: 10px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+    color: var(--text-main);
+  }
+  input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+  input::placeholder { color: #9ca3af; }
+  
+  .pw-wrap { position: relative; }
+  .pw-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    font-size: 1rem;
+    padding: 0;
+  }
+  .pw-toggle:hover { color: var(--text-main); }
+  
+  .btn {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--primary);
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 8px;
+  }
+  .btn:hover { background-color: var(--primary-hover); }
+  .btn:disabled { background-color: #9ca3af; cursor: not-allowed; }
+  .btn-outline {
+    background-color: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+  }
+  .btn-outline:hover { background-color: var(--bg-color); }
+
+  .msg {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    display: none;
+    font-weight: 500;
+  }
+  .msg.error { background: #fef2f2; color: var(--error); border: 1px solid #fecaca; }
+  .msg.success { background: #ecfdf5; color: var(--success); border: 1px solid #a7f3d0; }
+  .msg.show { display: block; }
+  
+  .otp-area { display: none; text-align: center; }
+  .otp-area.show { display: block; }
+  .timer { font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; }
+  .hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
+  .footer-note { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-header">
+    <div class="brand-icon">🏨</div>
+    <div class="brand-title">Smart Stay</div>
+    <div class="brand-subtitle">Hostel Management System</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab" id="tabLogin" onclick="switchTab('login')">Login</div>
+    <div class="tab active" id="tabRegister" onclick="switchTab('register')">Register</div>
+  </div>
+
+  <div class="auth-body">
+    <!-- LOGIN SECTION -->
+    <div id="loginSection" style="display:none">
+      <div class="msg" id="loginMsg"></div>
+      
+      <div id="loginStep1">
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="loginEmail" placeholder="your@email.com" onkeydown="if(event.key==='Enter') document.getElementById('loginPassword').focus()"/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter') doLogin()"/>
+            <button type="button" class="pw-toggle" onclick="togglePwd('loginPassword',this)">👁</button>
+          </div>
+        </div>
+        <button class="btn" onclick="doLogin()">Authenticate</button>
+        <div class="footer-note">Admin login redirects automatically</div>
+      </div>
+
+      <div class="otp-area" id="loginStep2">
+        <p style="font-size:0.875rem; color:var(--text-muted); margin-bottom:12px">Enter the 6-digit code sent to your email.</p>
+        <div class="timer" id="timer">5:00</div>
+        
+        <div class="form-group" style="text-align: left;">
+          <input type="text" id="otpInput" placeholder="6-digit code" maxlength="6" style="text-align: center; letter-spacing: 2px; font-size: 1.1rem" onkeydown="if(event.key==='Enter') doVerifyOTP()"/>
+        </div>
+        <button class="btn" id="verifyBtn" onclick="doVerifyOTP()">Verify Token</button>
+        <button class="btn btn-outline" id="resendBtn" disabled onclick="resendOTP()" style="margin-top: 12px;">Resend OTP</button>
+      </div>
+    </div>
+
+    <!-- REGISTER SECTION -->
+    <div id="registerSection" style="display:block">
+      <div class="msg" id="regMsg"></div>
+
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="regName" placeholder="John Doe" onkeydown="if(event.key==='Enter') document.getElementById('regEmail').focus()"/>
+      </div>
+      
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="regEmail" placeholder="user@hostel.edu" onkeydown="if(event.key==='Enter') document.getElementById('regPassword').focus()"/>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="regPassword" placeholder="Min 8: A-Z, a-z, 0-9, @!" onkeydown="if(event.key==='Enter') document.getElementById('regBlock').focus()"/>
+          <button type="button" class="pw-toggle" onclick="togglePwd('regPassword',this)">👁</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="form-group">
+          <label>Block</label>
+          <input type="text" id="regBlock" placeholder="e.g. A" onkeydown="if(event.key==='Enter') document.getElementById('regRoom').focus()"/>
+        </div>
+        <div class="form-group">
+          <label>Room No</label>
+          <input type="text" id="regRoom" placeholder="e.g. 204" onkeydown="if(event.key==='Enter') document.getElementById('regPhone').focus()"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="regPhone" placeholder="+91 9000000000" onkeydown="if(event.key==='Enter') doRegister()"/>
+      </div>
+
+      <button class="btn" onclick="doRegister()">Create Account</button>
+      <div class="hint">Password policy: Minimum 8 characters, including uppercase, lowercase, number, and special character.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Session check
+fetch('/api/session', {credentials:'include'})
+  .then(r => r.json())
+  .then(d => {
+    if(d.loggedIn) window.location.href = d.role === 'admin' ? '/admin.html' : '/dashboard.html';
+  });
+
+function switchTab(t) {
+  document.getElementById('tabLogin').classList.toggle('active', t === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', t === 'register');
+  document.getElementById('loginSection').style.display = t === 'login' ? 'block' : 'none';
+  document.getElementById('registerSection').style.display = t === 'register' ? 'block' : 'none';
+  hideMsg();
+}
+
+function showMsg(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = `msg ${type} show`;
+}
+
+function hideMsg() {
+  document.getElementById('loginMsg').classList.remove('show');
+  document.getElementById('regMsg').classList.remove('show');
+}
+
+function togglePwd(id, btn) {
+  const inp = document.getElementById(id);
+  if(inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
+async function doRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const block = document.getElementById('regBlock').value.trim();
+  const room = document.getElementById('regRoom').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  
+  if(!name || !email || !password) return showMsg('regMsg', 'Name, email and password are required', 'error');
+  
+  showMsg('regMsg', 'Creating account...', 'success');
+  const payload = {name, email, password, block, room, phone};
+  
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST', credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const d = await res.json();
+    if (d.error) showMsg('regMsg', d.error, 'error');
+    else {
+      showMsg('regMsg', 'Account created successfully! Redirecting to login...', 'success');
+      setTimeout(() => switchTab('login'), 2000);
+    }
+  } catch(e) {
+    showMsg('regMsg', 'Network error.', 'error');
+  }
+}
+
+let otpTimerInterval;
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) return showMsg('loginMsg', 'Credentials required', 'error');
+  
+  showMsg('loginMsg', 'Authenticating...', 'success');
+  
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST', credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const d = await res.json();
+    if(d.error) {
+      showMsg('loginMsg', d.error, 'error');
+    } else if(d.role === 'admin') {
+      showMsg('loginMsg', 'Admin login successful. Redirecting...', 'success');
+      setTimeout(() => window.location.href = '/admin.html', 800);
+    } else {
+      showMsg('loginMsg', 'OTP sent to your email.', 'success');
+      document.getElementById('loginStep1').style.display = 'none';
+      document.getElementById('loginStep2').classList.add('show');
+      startOtpTimer();
+    }
+  } catch(e) {
+    showMsg('loginMsg', 'Network error.', 'error');
+  }
+}
+
+async function doVerifyOTP() {
+  const otp = document.getElementById('otpInput').value.trim();
+  if(!otp) return showMsg('loginMsg', 'OTP required', 'error');
+  
+  showMsg('loginMsg', 'Verifying...', 'success');
+  try {
+    const res = await fetch('/api/verify-otp', {
+      method: 'POST', credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({otp})
+    });
+    const d = await res.json();
+    if (d.error) showMsg('loginMsg', d.error, 'error');
+    else {
+      showMsg('loginMsg', 'Access granted. Redirecting...', 'success');
+      setTimeout(() => window.location.href = '/dashboard.html', 800);
+    }
+  } catch(e) {
+    showMsg('loginMsg', 'Network error', 'error');
+  }
+}
+
+function startOtpTimer() {
+  document.getElementById("resendBtn").disabled = true;
+  document.getElementById("verifyBtn").disabled = false;
+  if (otpTimerInterval) clearInterval(otpTimerInterval);
+  
+  let time = 300; // 5 mins
+  const el = document.getElementById("timer");
+  
+  otpTimerInterval = setInterval(() => {
+    let min = Math.floor(time / 60);
+    let sec = time % 60;
+    el.innerText = `${min}:${sec < 10 ? '0' : ''}${sec}`;
+    time--;
+    
+    if (time < 0) {
+      clearInterval(otpTimerInterval);
+      el.innerText = "OTP Expired";
+      document.getElementById("verifyBtn").disabled = true;
+      document.getElementById("resendBtn").disabled = false;
+    }
+  }, 1000);
+}
+
+function resendOTP() {
+  document.getElementById("resendBtn").disabled = true;
+  showMsg('loginMsg', 'Resending OTP...', 'success');
+  
+  fetch('/api/resend-otp', {
+    method: 'POST', credentials: 'include'
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) {
+      showMsg('loginMsg', data.error, 'error');
+      document.getElementById("resendBtn").disabled = false;
+    } else {
+      showMsg('loginMsg', 'New OTP sent to your email.', 'success');
+      startOtpTimer();
+    }
+  })
+  .catch(e => {
+    showMsg('loginMsg', 'Network error', 'error');
+    document.getElementById("resendBtn").disabled = false;
+  });
+}
+</script>
+</body>
+</html>

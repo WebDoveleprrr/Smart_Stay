@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Admin — Smart Stay</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f4f6;--sidebar:#ffffff;--surface:#ffffff;--surface2:#f9fafb;
+  --amber:#2563eb;--amber2:#1d4ed8;--amber3:rgba(37,99,235,0.08);
+  --rust:#3b82f6;--cream:#111827;--dim:#4b5563;--muted:#6b7280;
+  --text:#1f2937;--border:#e5e7eb;
+  --success:#10b981;--error:#ef4444;--blue:#3b82f6;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body {
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  background-color: var(--bg);
+  background-image: url('aryabhatta.jpg');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-attachment: fixed;
+  position: relative;
+  z-index: 1;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: -1;
+}
+
+.sidebar{width:250px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:100;transition:transform 0.3s ease;}
+.sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+.logo-row{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:40px;height:40px;background:var(--amber);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:white;box-shadow:0 4px 10px rgba(37,99,235,0.2);}
+.logo-text{font-size:1.15rem;font-weight:700;color:var(--cream);}
+.logo-text span{color:var(--amber);}
+.admin-ribbon{margin-top:10px;background:var(--amber3);border:1px solid rgba(37,99,235,0.2);border-radius:6px;padding:6px 10px;font-size:0.7rem;font-weight:700;color:var(--amber);letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
+
+.nav{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;}
+.nav-section{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;padding:12px 12px 6px;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:500;color:var(--dim);transition:all 0.2s;border:none;background:transparent;width:100%;text-align:left;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--amber3);color:var(--amber2);font-weight:600;border-left:3px solid var(--amber);}
+.nav-item .icon{font-size:1.1rem;width:24px;text-align:center;}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border);}
+.logout-btn{width:100%;padding:10px;background:#fef2f2;border:1px solid #fee2e2;color:var(--error);border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;transition:all 0.2s;}
+.logout-btn:hover{background:#fee2e2;}
+
+.main{margin-left:250px;flex:1;position:relative;z-index:1;transition:margin-left 0.3s ease;}
+body.sidebar-collapsed .sidebar{transform:translateX(-100%);}
+body.sidebar-collapsed .main{margin-left:0;}
+.topbar{padding:20px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);position:sticky;top:0;z-index:50;}
+.topbar-left {display:flex;align-items:center;gap:16px;}
+.menu-toggle {display:block;font-size:1.5rem;background:none;border:none;cursor:pointer;color:var(--text);}
+.page-title{font-size:1.4rem;font-weight:700;color:var(--cream);}
+.admin-tag{display:flex;align-items:center;gap:8px;background:var(--amber3);border:1px solid rgba(37,99,235,0.2);border-radius:50px;padding:6px 16px;font-size:0.8rem;font-weight:600;color:var(--amber2);}
+.content{padding:32px; max-width:1200px; margin:0 auto;}
+.page{display:none;animation:fadeIn 0.3s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.05);transition:transform 0.2s;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.05);}
+.stat-icon{font-size:1.6rem;margin-bottom:8px;}
+.stat-num{font-size:2rem;font-weight:700;color:var(--cream);margin-bottom:4px;}
+.stat-lbl{font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.05);margin-bottom:20px;}
+.card-title{font-size:1.1rem;font-weight:600;color:var(--cream);margin-bottom:4px;}
+.card-sub{color:var(--muted);font-size:0.85rem;margin-bottom:20px;}
+
+.filter-row{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.filter-btn{padding:8px 16px;border:1px solid var(--border);border-radius:50px;background:var(--surface);color:var(--muted);font-size:0.85rem;font-weight:500;cursor:pointer;transition:all 0.2s;}
+.filter-btn.active,.filter-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber3);}
+
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;padding:12px 16px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);}
+td{padding:12px 16px;font-size:0.9rem;border-bottom:1px solid var(--border);}
+
+.badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:50px;font-size:0.75rem;font-weight:600;}
+.badge.pending{background:#fef3c7;color:#d97706;}
+.badge.resolved,.badge.confirmed,.badge.found{background:#d1fae5;color:#059669;}
+.badge.progress{background:#dbeafe;color:#2563eb;}
+.badge.open,.badge.lost{background:#fee2e2;color:#dc2626;}
+.badge.closed{background:#dbeafe;color:#1e3a8a;}
+.badge.urgent{background:#fee2e2;color:#dc2626;}
+.badge.high{background:#ffedd5;color:#ea580c;}
+.badge.normal{background:#f3f4f6;color:#4b5563;}
+
+select.status-sel{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-family:inherit;font-size:0.85rem;cursor:pointer;outline:none;transition:border-color 0.2s;}
+select.status-sel:focus{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber3);}
+
+.status-row{display:flex;flex-direction:column;gap:12px;}
+.status-item{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);font-size:0.9rem;font-weight:500;}
+
+.cancel-btn{padding:6px 12px;background:#fef2f2;border:1px solid #fee2e2;color:var(--error);border-radius:6px;cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s;}
+.cancel-btn:hover{background:#fee2e2;}
+
+@media(max-width: 900px) {
+  .stats-grid {grid-template-columns: repeat(3, 1fr);}
+}
+@media(max-width: 768px) {
+  .sidebar {transform: translateX(-100%);}
+  .sidebar.open {transform: translateX(0);}
+  .main {margin-left: 0;}
+  .menu-toggle {display: block;}
+  .stats-grid {grid-template-columns: 1fr;}
+  .content {padding: 20px;}
+  div[style*="grid-template-columns:1fr 1fr"] {grid-template-columns: 1fr !important;}
+}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-row">
+      <div class="logo-icon">🛡️</div>
+      <div class="logo-text">Smart<span>Stay</span></div>
+    </div>
+    <div class="admin-ribbon">⬡ Administrator Panel</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Overview</div>
+    <button class="nav-item active" onclick="showPage('overview',this)"><span class="icon">📊</span> Dashboard</button>
+    <div class="nav-section">Manage</div>
+    <button class="nav-item" onclick="showPage('services',this)"><span class="icon">🔧</span> Service Requests</button>
+    <button class="nav-item" onclick="showPage('bookings',this)"><span class="icon">🏋️</span> Facility Bookings</button>
+    <button class="nav-item" onclick="showPage('lostfound',this)"><span class="icon">🔍</span> Lost &amp; Found</button>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div class="page-title" id="topTitle">🏨 Admin Dashboard</div>
+    </div>
+    <div class="admin-tag">🛡️ Administrator</div>
+  </div>
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="stats-grid">
+        <div class="stat-card c1"><div class="stat-icon">👥</div><div class="stat-num" id="as-students">—</div><div class="stat-lbl">Students</div></div>
+        <div class="stat-card c2"><div class="stat-icon">📋</div><div class="stat-num" id="as-total">—</div><div class="stat-lbl">Total Requests</div></div>
+        <div class="stat-card c3"><div class="stat-icon">⏳</div><div class="stat-num" id="as-pending">—</div><div class="stat-lbl">Pending</div></div>
+        <div class="stat-card c4"><div class="stat-icon">🏋️</div><div class="stat-num" id="as-bookings">—</div><div class="stat-lbl">Bookings</div></div>
+        <div class="stat-card c5"><div class="stat-icon">🔍</div><div class="stat-num" id="as-lf">—</div><div class="stat-lbl">Open Cases</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+        <div class="card">
+          <div class="card-title">Latest Service Requests</div>
+          <div class="card-sub">5 most recent submissions</div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Student</th><th>Category</th><th>Priority</th><th>Status</th></tr></thead>
+            <tbody id="overviewTable"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">Loading…</td></tr></tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Platform Status</div>
+          <div class="card-sub">All modules operational</div>
+          <div class="status-row">
+            <div class="status-item"><span>🔧 Service Module</span><span class="badge resolved">Online</span></div>
+            <div class="status-item"><span>🏋️ Booking Module</span><span class="badge resolved">Online</span></div>
+            <div class="status-item"><span>🔍 Lost &amp; Found</span><span class="badge resolved">Online</span></div>
+            <div class="status-item"><span>🗄️ MongoDB Database</span><span class="badge resolved">Online</span></div>
+            <div class="status-item"><span>🔐 Auth / OTP</span><span class="badge resolved">Online</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SERVICE REQUESTS -->
+    <div class="page" id="page-services">
+      <div class="card">
+        <div class="card-title">All Service Requests</div>
+        <div class="card-sub">Manage and update status of all hostel service requests</div>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterSrv('all',this)">All</button>
+          <button class="filter-btn" onclick="filterSrv('Pending',this)">Pending</button>
+          <button class="filter-btn" onclick="filterSrv('In Progress',this)">In Progress</button>
+          <button class="filter-btn" onclick="filterSrv('Resolved',this)">Resolved</button>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Student</th><th>Category</th><th>Description</th><th>Block / Room</th><th>Priority</th><th>Date</th><th>Update Status</th></tr></thead>
+          <tbody id="adminSrvTable"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">Loading…</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- BOOKINGS -->
+    <div class="page" id="page-bookings">
+      <div class="card">
+        <div class="card-title">All Facility Bookings</div>
+        <div class="card-sub">Overview of all hostel facility reservations</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Student</th><th>Facility</th><th>Date</th><th>Time Slot</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="adminBookTable"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">Loading…</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- LOST & FOUND -->
+    <div class="page" id="page-lostfound">
+      <div class="card">
+        <div class="card-title">🔍 Lost &amp; Found — All Reports</div>
+        <div class="card-sub">All submitted incident reports from hostel students</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Photo</th><th>Student</th><th>Type</th><th>Item</th><th>Location</th><th>Description</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="adminLFTable"><tr><td colspan="8" style="text-align:center;color:var(--muted);padding:30px">Loading…</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function toggleSidebar() {
+  if (window.innerWidth <= 768) {
+    document.querySelector('.sidebar').classList.toggle('open');
+  } else {
+    document.body.classList.toggle('sidebar-collapsed');
+  }
+}
+let allSrv=[];
+fetch('http://localhost:3000/api/session',{credentials:'include'}).then(r=>r.json()).then(d=>{
+  if(!d.loggedIn||d.role!=='admin')window.location.href='/';
+  else{loadStats();loadAdminServices();loadAdminBookings();loadAdminLF();}
+});
+
+const pageTitles={overview:'🏨 Admin Dashboard',services:'🔧 Service Requests',bookings:'🏋️ Facility Bookings',lostfound:'🔍 Lost & Found Reports'};
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  document.getElementById('topTitle').textContent=pageTitles[id]||id;
+}
+
+async function loadStats(){
+  const d=await fetch('http://localhost:3000/api/admin/stats',{credentials:'include'}).then(r=>r.json());
+  const s=d.stats||{};
+  document.getElementById('as-students').textContent=s.students??'—';
+  document.getElementById('as-total').textContent=s.totalRequests??'—';
+  document.getElementById('as-pending').textContent=s.pendingRequests??'—';
+  document.getElementById('as-bookings').textContent=s.totalBookings??'—';
+  document.getElementById('as-lf').textContent=s.openLostFound??'—';
+}
+
+async function loadAdminServices(){
+  const d=await fetch('http://localhost:3000/api/services',{credentials:'include'}).then(r=>r.json());
+  allSrv=d.requests||[];
+  renderAdminSrv(allSrv);
+  const catIcons={Electrician:'⚡',Plumber:'🔩',Cleaning:'🧹',Laundry:'👕',Carpenter:'🪚',Other:'⚙️'};
+  document.getElementById('overviewTable').innerHTML=allSrv.slice(0,5).map(r=>`
+    <tr><td style="font-weight:600">${r.user_name||'—'}</td>
+    <td>${catIcons[r.category]||'⚙️'} ${r.category}</td>
+    <td><span class="badge ${r.priority.toLowerCase()}">${r.priority}</span></td>
+    <td><span class="badge ${r.status==='Pending'?'pending':r.status==='Resolved'?'resolved':'progress'}">${r.status}</span></td>
+    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">No requests</td></tr>';
+}
+
+function filterSrv(type,btn){
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAdminSrv(type==='all'?allSrv:allSrv.filter(r=>r.status===type));
+}
+
+function renderAdminSrv(reqs){
+  const catIcons={Electrician:'⚡',Plumber:'🔩',Cleaning:'🧹',Laundry:'👕',Carpenter:'🪚',Other:'⚙️'};
+  document.getElementById('adminSrvTable').innerHTML=reqs.length
+    ?reqs.map(r=>`<tr>
+      <td><div style="font-weight:700">${r.user_name||'—'}</div><div style="font-size:0.7rem;color:var(--muted)">${r.user_email||''}</div></td>
+      <td>${catIcons[r.category]||'⚙️'} ${r.category}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${r.description||'—'}</td>
+      <td style="font-size:0.78rem">${r.block||'—'} / ${r.room||'—'}</td>
+      <td><span class="badge ${r.priority.toLowerCase()}">${r.priority}</span></td>
+      <td style="font-size:0.72rem;color:var(--muted)">${new Date(r.created_at*1000).toLocaleDateString()}</td>
+      <td>
+        <select class="status-sel" onchange="updateStatus('${r.id}',this.value)">
+          <option ${r.status==='Pending'?'selected':''}>Pending</option>
+          <option ${r.status==='In Progress'?'selected':''}>In Progress</option>
+          <option ${r.status==='Resolved'?'selected':''}>Resolved</option>
+        </select>
+      </td></tr>`).join('')
+    :'<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">No requests found</td></tr>';
+}
+
+async function updateStatus(id,status){
+  await fetch(`http://localhost:3000/api/services/${id}`,{method:'PATCH',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+  loadStats();loadAdminServices();
+}
+
+async function loadAdminBookings(){
+  const d=await fetch('http://localhost:3000/api/bookings',{credentials:'include'}).then(r=>r.json());
+  const books=d.bookings||[];
+  document.getElementById('adminBookTable').innerHTML=books.length
+    ?books.map(b=>`<tr>
+      <td style="font-weight:600">${b.user_name||'—'}</td>
+      <td>${b.facility}</td><td>${b.date}</td><td>${b.time_slot}</td>
+      <td><span class="badge confirmed">${b.status}</span></td>
+      <td><button class="cancel-btn" onclick="cancelBook('${b.id}')">Cancel</button></td>
+      </tr>`).join('')
+    :'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">No bookings</td></tr>';
+}
+
+async function cancelBook(id){
+  if(!confirm('Cancel this booking?'))return;
+  await fetch(`http://localhost:3000/api/bookings/${id}`,{method:'DELETE',credentials:'include'});
+  loadAdminBookings();loadStats();
+}
+
+async function loadAdminLF(){
+  const d=await fetch('http://localhost:3000/api/lost-found',{credentials:'include'}).then(r=>r.json());
+  const items=d.items||[];
+  document.getElementById('adminLFTable').innerHTML=items.length
+    ?items.map(i=>`<tr>
+      <td>${i.image?`<img src="/uploads/${i.image}" width="50" height="50" style="object-fit:cover;border-radius:6px;"/>` :'<span style="font-size:1.4rem">📦</span>'}</td>
+      <td style="font-weight:600">${i.user_name}</td>
+      <td><span class="badge ${i.type.toLowerCase()}">${i.type}</span></td>
+      <td><div style="font-weight:600">${i.item_name}</div></td>
+      <td style="font-size:0.78rem;color:var(--muted)">${i.location||'—'}</td>
+      <td style="font-size:0.75rem;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${i.description||'—'}</td>
+      <td><span class="badge ${i.status==='Open'?'pending':'resolved'}">${i.status}</span></td>
+      <td style="font-size:0.72rem;color:var(--muted)">${new Date(i.created_at*1000).toLocaleDateString()}</td>
+      </tr>`).join('')
+    :'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:30px">No reports</td></tr>';
+}
+
+async function doLogout(){await fetch('http://localhost:3000/api/logout',{method:'POST',credentials:'include'});window.location.href='/';}
+</script>
+</body>
+</html>
