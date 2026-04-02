@@ -11,13 +11,14 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(cors({
   origin: "*",
   credentials: true
 }));
-
-const app = express();
-const PORT = process.env.PORT || 3000;
 
 // ✅ uploadsDir FIRST
 const uploadsDir = path.join(__dirname, 'uploads');
