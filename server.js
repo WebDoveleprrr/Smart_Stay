@@ -74,7 +74,7 @@ function sendMail(to, subject, textContent, attachments = [], status = null) {
     to,
     from: {
       name: 'Smart Stay',
-      email: process.env.EMAIL_USER
+      email: process.env.EMAIL_USER || "brohitchowdary5@gmail.com"
     },
     subject,
     text: textContent + '\n\nThis is an automated email from Smart Stay',
@@ -125,16 +125,10 @@ app.use(session({
 }));
 
 // ── File Uploads ──────────────────────────────────────────────────
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
-  }
-});
+const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB Max Size
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
       cb(null, true);
@@ -195,7 +189,7 @@ const lostFoundSchema = new mongoose.Schema({
   item_name: { type: String, required: true },
   description: { type: String, default: '' },
   location: { type: String, default: '' },
-  image: { type: String, default: null },
+  image: { data: String, contentType: String },
   status: { type: String, default: 'Open' },
   matched_id: { type: String, default: null },
   created_at: { type: Number, default: () => Math.floor(Date.now() / 1000) }
@@ -555,7 +549,6 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
     if (err) return res.status(400).json({ error: err.message });
     const { type, item_name, description, location } = req.body;
     if (!type || !item_name) return res.status(400).json({ error: 'Type and item name required.' });
-    const image = req.file ? req.file.filename : null;
     try {
       let item = await LostFound.create({
         user_id: req.session.userId,
@@ -563,7 +556,10 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
         item_name,
         description: description || '',
         location: location || '',
-        image: image,
+        image: req.file ? {
+          data: req.file.buffer.toString("base64"),
+          contentType: req.file.mimetype
+        } : null,
         status: 'Open'
       });
 
@@ -629,7 +625,7 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
         let attachments = [];
         if (req.file) {
           try {
-            const base64Str = fs.readFileSync(req.file.path).toString("base64");
+            const base64Str = req.file.buffer.toString("base64");
             attachments.push({
               content: base64Str,
               filename: req.file.originalname,
@@ -665,14 +661,6 @@ Description: ${description}
 - Smart Stay`, attachments, item.status);
 
       }
-
-      // Cleanup file after reading to memory for attachment
-      if (req.file) {
-        fs.unlink(req.file.path, err => {
-          if (err) console.error("Error deleting file:", err);
-        });
-      }
-
       res.json({ success: true, message: 'Report posted! Confirmation email sent.', id: item._id });
     } catch (err) { res.status(500).json({ error: 'Failed to post.' }); }
   });
