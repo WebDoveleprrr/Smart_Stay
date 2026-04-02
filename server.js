@@ -11,6 +11,10 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+app.use(cors({
+  origin: "*",
+  credentials: true
+}));
 
 const app = express();
 const PORT = process.env.PORT || 3000;
