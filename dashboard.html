@@ -10,10 +10,10 @@
     rel="stylesheet">
   <style>
     :root {
-      --bg: transparent;
-      --sidebar: rgba(255, 255, 255, 0.95);
-      --surface: rgba(255, 255, 255, 0.9);
-      --surface2: rgba(255, 255, 255, 0.6);
+      --bg: #f3f4f6;
+      --sidebar: #ffffff;
+      --surface: #ffffff;
+      --surface2: #f9fafb;
       --amber: #2563eb;
       --amber2: #1d4ed8;
       --amber3: rgba(37, 99, 235, 0.1);
@@ -42,21 +42,7 @@
       min-height: 100vh;
       display: flex;
       background-color: var(--bg);
-      background-image: url('aryabhatta.jpg');
-      background-repeat: no-repeat;
-      background-position: center center;
-      background-size: cover;
-      background-attachment: fixed;
-      position: relative;
       z-index: 1;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: -1;
     }
 
     .sidebar {
@@ -291,9 +277,8 @@
     }
 
     .content {
-      padding: 32px;
-      max-width: 1200px;
-      margin: 0 auto;
+      padding: 24px;
+      max-width: 100%;
     }
 
     .page {
@@ -863,7 +848,7 @@
 <body>
 
   <div class="sidebar">
-    <div class="sidebar-logo">
+    <div class="sidebar-logo" onclick="goHome()" style="cursor:pointer;" title="Go back to Home">
       <div class="logo-icon">🏨</div>
       <div>
         <div class="logo-text">Smart<span>Stay</span></div>
@@ -1396,7 +1381,7 @@
     }
 
     function goHome() {
-      window.location.href = "index.html";
+      showPage('overview', document.querySelectorAll('.nav-item')[0]);
     }
     function showMsg(id, text, type) { const e = document.getElementById(id); e.textContent = text; e.className = `msg ${type} show`; }
     async function doLogout() { await fetch('https://smart-stay-0gxx.onrender.com/api/logout', { method: 'POST', credentials: 'include' }); window.location.href = '/'; }

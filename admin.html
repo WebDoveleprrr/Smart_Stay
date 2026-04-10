@@ -42,21 +42,7 @@
       min-height: 100vh;
       display: flex;
       background-color: var(--bg);
-      background-image: url('aryabhatta.jpg');
-      background-repeat: no-repeat;
-      background-position: center center;
-      background-size: cover;
-      background-attachment: fixed;
-      position: relative;
       z-index: 1;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: -1;
     }
 
     .sidebar {
@@ -261,9 +247,8 @@
     }
 
     .content {
-      padding: 32px;
-      max-width: 1200px;
-      margin: 0 auto;
+      padding: 24px;
+      max-width: 100%;
     }
 
     .page {
@@ -548,7 +533,7 @@
 
 <body>
   <div class="sidebar">
-    <div class="sidebar-logo">
+    <div class="sidebar-logo" onclick="goHome()" style="cursor:pointer;" title="Go back to Home">
       <div class="logo-row">
         <div class="logo-icon">🛡️</div>
         <div class="logo-text">Smart<span>Stay</span></div>
@@ -854,7 +839,7 @@
     }
 
     function goHome() {
-      window.location.href = "index.html";
+      showPage('overview', document.querySelectorAll('.nav-item')[0]);
     }
     async function doLogout() { await fetch('https://smart-stay-0gxx.onrender.com/api/logout', { method: 'POST', credentials: 'include' }); window.location.href = '/'; }
   </script>
