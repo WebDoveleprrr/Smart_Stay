@@ -49,10 +49,11 @@
     .global-header {
       width: 100%;
       background: #ffffff;
-      padding: 16px 24px;
+      height: 60px;
+      padding: 0 24px;
       border-bottom: 1px solid var(--border);
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
       z-index: 200;
@@ -552,9 +553,11 @@
 
 <body>
   <header class="global-header">
-    <div class="global-logo" onclick="window.location.href='admin.html'" style="cursor:pointer;" title="Overview">
-      Smart<span>Stay</span>
+    <div class="header-branding" onclick="window.location.href='admin.html'" style="cursor:pointer; display:flex; align-items:center; gap:10px;" title="Overview">
+      <div class="logo-icon" style="width:32px; height:32px; font-size:1.1rem; border-radius:8px;">🛡️</div>
+      <div class="global-logo">Smart<span>Stay</span></div>
     </div>
+    <div class="admin-tag">🛡️ Administrator</div>
   </header>
   <div class="layout-wrapper">
   <div class="sidebar">
@@ -581,7 +584,6 @@
         <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
         <div class="page-title" id="topTitle">🏨 Admin Dashboard</div>
       </div>
-      <div class="admin-tag">🛡️ Administrator</div>
     </div>
     <div class="content">
 
