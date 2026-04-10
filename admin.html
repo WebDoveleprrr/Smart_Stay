@@ -38,10 +38,42 @@
     body {
       font-family: 'Inter', sans-serif;
       color: var(--text);
-      min-height: 100vh;
+      height: 100vh;
       display: flex;
+      flex-direction: column;
       background-color: var(--bg);
+      overflow: hidden;
       z-index: 1;
+    }
+
+    .global-header {
+      width: 100%;
+      background: #ffffff;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+      z-index: 200;
+    }
+
+    .global-logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--cream);
+      letter-spacing: -0.5px;
+    }
+
+    .global-logo span {
+      color: var(--amber);
+    }
+
+    .layout-wrapper {
+      display: flex;
+      flex: 1;
+      height: 100%;
+      overflow: hidden;
     }
 
     .sidebar {
@@ -51,16 +83,10 @@
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      position: sticky;
-      top: 0;
-      height: 100vh;
+      height: 100%;
+      overflow-y: auto;
       z-index: 100;
       transition: margin-left 0.3s ease, transform 0.3s ease;
-    }
-
-    .sidebar-logo {
-      padding: 20px;
-      border-bottom: 1px solid var(--border);
     }
 
     .logo-row {
@@ -187,6 +213,8 @@
       flex: 1;
       position: relative;
       z-index: 1;
+      height: 100%;
+      overflow-y: auto;
     }
 
     body.sidebar-collapsed .sidebar {
@@ -523,14 +551,13 @@
 </head>
 
 <body>
-  <div class="sidebar">
-    <div class="sidebar-logo" onclick="window.location.href='dashboard.html'" style="cursor:pointer;" title="Go back to Home">
-      <div class="logo-row">
-        <div class="logo-icon">🛡️</div>
-        <div class="logo-text">Smart<span>Stay</span></div>
-      </div>
-      <div class="admin-ribbon">⬡ Administrator Panel</div>
+  <header class="global-header">
+    <div class="global-logo" onclick="window.location.href='admin.html'" style="cursor:pointer;" title="Overview">
+      Smart<span>Stay</span>
     </div>
+  </header>
+  <div class="layout-wrapper">
+  <div class="sidebar">
     <nav class="nav">
       <div class="nav-section">Overview</div>
       <button class="nav-item active" onclick="showPage('overview',this)"><span class="icon">📊</span>
@@ -714,6 +741,7 @@
       </div>
 
     </div>
+  </div>
   </div>
 
   <script>
