@@ -23,8 +23,8 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
-      /* Premium dark gradient + image */
-      background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.85)), url('aryabhatta.jpg');
+      /* Premium gradient + image */
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.6), rgba(59, 130, 246, 0.4)), url('aryabhatta.jpg');
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
@@ -34,12 +34,12 @@
     .auth-container {
       width: 100%;
       max-width: 440px;
-      background: rgba(255, 255, 255, 0.06);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 16px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
       padding: 40px 32px;
       transition: all 0.4s ease;
     }
@@ -54,6 +54,7 @@
       margin-bottom: 12px;
       background: linear-gradient(135deg, #60a5fa, #3b82f6);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
       line-height: 1;
     }
@@ -142,7 +143,7 @@
     .btn {
       width: 100%;
       padding: 14px;
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      background: linear-gradient(to right, #3b82f6, #2563eb);
       color: white;
       font-weight: 600;
       font-size: 1rem;
@@ -366,7 +367,7 @@
     function showMsg(id, text, type) {
       const el = document.getElementById(id);
       el.textContent = text;
-      el.className = \`msg \${type} show\`;
+      el.className = `msg ${type} show`;
     }
 
     function hideMsg() {
@@ -476,7 +477,7 @@
       otpTimerInterval = setInterval(() => {
         let min = Math.floor(time / 60);
         let sec = time % 60;
-        el.innerText = \`\${min}:\${sec < 10 ? '0' : ''}\${sec}\`;
+        el.innerText = `${min}:${sec < 10 ? '0' : ''}${sec}`;
         time--;
 
         if (time < 0) {
