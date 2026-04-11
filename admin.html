@@ -9,22 +9,25 @@
     rel="stylesheet">
   <style>
     :root {
-      --bg: #f3f4f6;
-      --sidebar: #ffffff;
-      --surface: #ffffff;
+      --bg: linear-gradient(135deg, #EEF2F7, #E3E8EF);
+      --sidebar: #1E293B;
+      --surface: #FFFFFF;
       --surface2: #f9fafb;
-      --amber: #2563eb;
-      --amber2: #1d4ed8;
-      --amber3: rgba(37, 99, 235, 0.08);
-      --rust: #3b82f6;
-      --cream: #111827;
-      --dim: #4b5563;
-      --muted: #6b7280;
-      --text: #1f2937;
+      --amber: #2563EB;
+      --amber2: #3B82F6;
+      --amber3: #334155;
+      --rust: #3B82F6;
+      --cream: #1E293B;
+      --dim: #CBD5F5;
+      --muted: #64748B;
+      --text: #1E293B;
       --border: #e5e7eb;
       --success: #10b981;
-      --error: #ef4444;
-      --blue: #3b82f6;
+      --error: #EF4444;
+      --blue: #3B82F6;
+      --btn-primary: linear-gradient(135deg, #2563EB, #3B82F6);
+      --btn-danger: linear-gradient(135deg, #DC2626, #EF4444);
+      --btn-neutral: #475569;
     }
 
     *,
@@ -41,7 +44,7 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
-      background-color: var(--bg);
+      background: var(--bg);
       overflow: hidden;
       z-index: 1;
     }
@@ -162,8 +165,8 @@
       cursor: pointer;
       font-size: 0.9rem;
       font-weight: 500;
-      color: var(--dim);
-      transition: all 0.2s;
+      color: #CBD5F5;
+      transition: all 0.2s ease-in-out;
       border: none;
       background: transparent;
       width: 100%;
@@ -171,15 +174,15 @@
     }
 
     .nav-item:hover {
-      background: var(--surface2);
-      color: var(--text);
+      background: #334155;
+      color: #FFFFFF;
     }
 
     .nav-item.active {
-      background: var(--amber3);
-      color: var(--amber2);
+      background: #334155;
+      color: #FFFFFF;
       font-weight: 600;
-      border-left: 3px solid var(--amber);
+      border-left: 3px solid #3B82F6;
     }
 
     .nav-item .icon {
@@ -195,19 +198,20 @@
 
     .logout-btn {
       width: 100%;
-      padding: 10px;
-      background: #fef2f2;
-      border: 1px solid #fee2e2;
-      color: var(--error);
+      padding: 12px 24px;
+      background: var(--btn-danger);
+      color: white;
+      border: none;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 600;
-      transition: all 0.2s;
+      transition: all 0.2s ease-in-out;
     }
 
     .logout-btn:hover {
-      background: #fee2e2;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
     }
 
     .main {
@@ -306,15 +310,15 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 20px;
+      padding: 24px;
       text-align: center;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-      transition: transform 0.2s;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      transition: all 0.2s ease-in-out;
     }
 
     .stat-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
     }
 
     .stat-icon {
@@ -342,8 +346,14 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 24px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-      margin-bottom: 20px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+      transition: all 0.2s ease-in-out;
+    }
+    
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
     }
 
     .card-title {
@@ -501,19 +511,20 @@
     }
 
     .cancel-btn {
-      padding: 6px 12px;
-      background: #fef2f2;
-      border: 1px solid #fee2e2;
-      color: var(--error);
-      border-radius: 6px;
+      padding: 8px 16px;
+      background: var(--btn-danger);
+      color: white;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
       font-size: 0.8rem;
       font-weight: 600;
-      transition: all 0.2s;
+      transition: all 0.2s ease-in-out;
     }
 
     .cancel-btn:hover {
-      background: #fee2e2;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
     @media(max-width: 900px) {
