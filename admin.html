@@ -873,19 +873,19 @@
       const d = await fetch('https://smart-stay-0gxx.onrender.com/api/lost-found', { credentials: 'include' }).then(r => r.json());
       const items = d.items || [];
       document.getElementById('adminLFTable').innerHTML = items.length
-        ? items.map(i => \`<tr>
-      <td>\${i.image ? \`<img src="\${i.image ? \`data:\${i.image.contentType};base64,\${i.image.data}\` : ''}" width="50" height="50" style="object-fit:cover;border-radius:6px;" />\` : '<span style="font-size:1.4rem">📦</span>'}</td>
-      <td style="font-weight:600">\${i.user_name}</td>
-      <td><span class="badge \${i.type.toLowerCase()}">\${i.type}</span></td>
-      <td><div style="font-weight:600">\${i.item_name}</div></td>
-      <td style="font-size:0.78rem;color:var(--muted)">\${i.location || '—'}</td>
-      <td style="font-size:0.75rem;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\${i.description || '—'}</td>
-      <td><span class="badge \${i.status === 'Open' ? 'pending' : 'resolved'}">\${i.status}</span></td>
-      <td style="font-size:0.72rem;color:var(--muted)">\${new Date(i.created_at * 1000).toLocaleDateString()}</td>
+        ? items.map(i => `<tr>
+      <td>${i.image ? `<img src="${i.image ? `data:${i.image.contentType};base64,${i.image.data}` : ''}" width="50" height="50" style="object-fit:cover;border-radius:6px;" />` : '<span style="font-size:1.4rem">📦</span>'}</td>
+      <td style="font-weight:600">${i.user_name}</td>
+      <td><span class="badge ${i.type.toLowerCase()}">${i.type}</span></td>
+      <td><div style="font-weight:600">${i.item_name}</div></td>
+      <td style="font-size:0.78rem;color:var(--muted)">${i.location || '—'}</td>
+      <td style="font-size:0.75rem;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${i.description || '—'}</td>
+      <td><span class="badge ${i.status === 'Open' ? 'pending' : 'resolved'}">${i.status}</span></td>
+      <td style="font-size:0.72rem;color:var(--muted)">${new Date(i.created_at * 1000).toLocaleDateString()}</td>
       <td>
-        \${i.status === 'Open' ? \`<button class="cancel-btn" style="background:var(--amber); padding:6px 12px; font-size:0.75rem;" onclick="findAdminMatches('\${i.id}')">Find Matches</button>\` : '—'}
+        ${i.status === 'Open' ? `<button class="cancel-btn" style="background:var(--amber); padding:6px 12px; font-size:0.75rem;" onclick="findAdminMatches('${i.id}')">Find Matches</button>` : '—'}
       </td>
-      </tr>\`).join('')
+      </tr>`).join('')
         : '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:30px">No reports</td></tr>';
     }
 
@@ -905,22 +905,22 @@
             mContent.innerHTML = mData.matches.map(m => {
                 const simScore = (m.score * 100).toFixed(1);
                 const isHigh = m.score > 0.90;
-                return \`
-                <div style="border:1px solid \${isHigh ? 'var(--amber)' : 'var(--border)'}; padding:12px; border-radius:8px; display:flex; gap:12px; align-items:center; background:var(--surface2);">
+                return `
+                <div style="border:1px solid ${isHigh ? 'var(--amber)' : 'var(--border)'}; padding:12px; border-radius:8px; display:flex; gap:12px; align-items:center; background:var(--surface2);">
                   <div style="width:70px; height:70px; border-radius:6px; overflow:hidden; background:#eee; flex-shrink:0;">
-                    \${m.image_url ? \`<img src="\${m.image_url}" style="width:100%;height:100%;object-fit:cover;" />\` : '<div style="font-size:2rem;text-align:center;line-height:70px;">📦</div>'}
+                    ${m.image_url ? `<img src="${m.image_url}" style="width:100%;height:100%;object-fit:cover;" />` : '<div style="font-size:2rem;text-align:center;line-height:70px;">📦</div>'}
                   </div>
                   <div style="flex:1;">
-                    <div style="font-weight:bold; color:var(--text);">\${m.item_name}</div>
-                    <div style="font-size:0.8rem; color:var(--muted); margin-bottom:4px;">\${m.type} • \${m.location || 'Unknown loc'}</div>
+                    <div style="font-weight:bold; color:var(--text);">${m.item_name}</div>
+                    <div style="font-size:0.8rem; color:var(--muted); margin-bottom:4px;">${m.type} • ${m.location || 'Unknown loc'}</div>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                      <span style="font-size:0.85rem; font-weight:bold; color:\${isHigh ? 'var(--success)' : 'var(--amber)'};">
-                        \${isHigh ? '🔥 High Match' : 'Similarity'}: \${simScore}%
+                      <span style="font-size:0.85rem; font-weight:bold; color:${isHigh ? 'var(--success)' : 'var(--amber)'};">
+                        ${isHigh ? '🔥 High Match' : 'Similarity'}: ${simScore}%
                       </span>
-                      <button class="cancel-btn" style="padding:4px 10px; font-size:0.8rem; background:var(--success);" onclick="confirmAdminMatch('\${id}', '\${m.id}')">Confirm</button>
+                      <button class="cancel-btn" style="padding:4px 10px; font-size:0.8rem; background:var(--success);" onclick="confirmAdminMatch('${id}', '${m.id}')">Confirm</button>
                     </div>
                   </div>
-                </div>\`;
+                </div>`;
             }).join('');
          } else {
             mContent.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No matching images found above confidence threshold.</div>';
