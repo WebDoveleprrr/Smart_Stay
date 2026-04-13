@@ -96,8 +96,8 @@ function sendMail(to, subject, textContent, attachments = [], status = null) {
 
   setImmediate(() => {
     sgMail.send(msg)
-      .then(() => console.log(`📧 Email sent to ${to}`))
-      .catch(err => console.error("❌ ERROR:", err.response?.body || err.message));
+      .then(() => console.log(`Email sent to ${to}`))
+      .catch(err => console.error("ERROR:", err.response?.body || err.message));
   });
 }
 
@@ -111,12 +111,12 @@ app.use('/uploads', express.static(uploadsDir));
 // ── MongoDB Connection ────────────────────────────────────────────
 mongoose.connect(MONGO_URI)
   .then(() => {
-    console.log('✅ Connected to MongoDB');
+    console.log('Connected to MongoDB');
     seedAdmin();
   })
   .catch(err => {
-    console.error('❌ MongoDB connection error:', err.message);
-    console.log('👉 Make sure MongoDB is running: mongod');
+    console.error('MongoDB connection error:', err.message);
+    console.log('Make sure MongoDB is running: mongod');
     process.exit(1);
   });
 
@@ -215,9 +215,9 @@ async function seedAdmin() {
         password_hash: hash,
         role: 'admin'
       });
-      console.log(`✅ Admin seeded: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
+      console.log(`Admin seeded: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
     } else {
-      console.log(`✅ Admin exists: ${ADMIN_EMAIL}`);
+      console.log(`Admin exists: ${ADMIN_EMAIL}`);
     }
   } catch (err) {
     console.error('Admin seed error:', err.message);
@@ -319,7 +319,7 @@ If not you, ignore.
 - Smart Stay`);
 
     // Admin OTP removed per user request
-    console.log(`\n🔐 OTP for ${user.email}: ${otp}\n`);
+    console.log(`\nOTP for ${user.email}: ${otp}\n`);
     res.json({ success: true, message: 'OTP sent to your registered email! Check your inbox.' });
   } catch (err) {
     console.error(err);
@@ -652,7 +652,7 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
 
     const validCandidates = candidates.filter(c => c.embedding && c.embedding.length > 0);
     if (validCandidates.length === 0) {
-       return res.json({ matches: [] });
+      return res.json({ matches: [] });
     }
 
     const reqBody = {
@@ -667,20 +667,20 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
     });
     if (!aiRes.ok) throw new Error("AI Service Similarity Failed");
     const aiData = await aiRes.json();
-    
+
     const matchDetails = [];
     for (const m of aiData.matches) {
-       let candDoc = validCandidates.find(c => c._id.toString() === m.id);
-       if (candDoc) {
-          const owner = await User.findById(candDoc.user_id);
-          matchDetails.push({ 
-            id: candDoc._id,
-            item_name: candDoc.item_name,
-            description: candDoc.description,
-            location: candDoc.location,
-            type: candDoc.type,
-            score: m.score, 
-            image_url: candDoc.image ? \`data:\${candDoc.image.contentType};base64,\${candDoc.image.data}\` : null, 
+      let candDoc = validCandidates.find(c => c._id.toString() === m.id);
+      if (candDoc) {
+        const owner = await User.findById(candDoc.user_id);
+        matchDetails.push({
+          id: candDoc._id,
+          item_name: candDoc.item_name,
+          description: candDoc.description,
+          location: candDoc.location,
+          type: candDoc.type,
+          score: m.score,
+          image_url: candDoc.image ? `data:${candDoc.image.contentType};base64,${candDoc.image.data}` : null, 
             user_name: owner?.name, 
             user_email: owner?.email 
           });
@@ -714,12 +714,19 @@ app.post('/api/confirm-match', requireAuth, async (req, res) => {
     const tOwner = await User.findById(target.user_id);
 
     if (sOwner?.email) {
-       sendMail(sOwner.email, "Match Confirmed for Your Item", \`Hello \${sOwner.name},\n\nYour \${source.type.toLowerCase()} item '\${source.item_name}' has been successfully matched and the case is now closed.\n\n- Smart Stay\`);
+       sendMail(
+         sOwner.email, 
+         "Match Confirmed for Your Item", 
+         `Hello ${sOwner.name},\n\nYour ${source.type.toLowerCase()} item '${source.item_name}' has been successfully matched and the case is now closed.\n\n- Smart Stay`
+       );
     }
     if (tOwner?.email) {
-       sendMail(tOwner.email, "Match Confirmed for Your Item", \`Hello \${tOwner.name},\n\nYour \${target.type.toLowerCase()} item '\${target.item_name}' has been successfully matched and the case is now closed.\n\n- Smart Stay\`);
+       sendMail(
+         tOwner.email, 
+         "Match Confirmed for Your Item", 
+         `Hello ${tOwner.name},\n\nYour ${target.type.toLowerCase()} item '${target.item_name}' has been successfully matched and the case is now closed.\n\n- Smart Stay`
+       );
     }
-
     res.json({ success: true, message: 'Match confirmed and cases closed.' });
   } catch (err) {
     console.error(err);
@@ -776,15 +783,20 @@ app.get('/api/admin/stats', requireAuth, async (req, res) => {
 
 // ── Auto-open browser & Start ─────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`\n🏨 Smart Stay running at http://localhost:${PORT}`);
-  console.log(`👤 Admin: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
-  console.log(`📧 Mail: ${process.env.EMAIL_USER}`);
-  console.log(`🍃 MongoDB: ${MONGO_URI}\n`);
+  console.log(`\nSmart Stay running at http://localhost:${PORT}`);
+  console.log(`Admin: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
+  console.log(`Mail: ${process.env.EMAIL_USER}`);
+  console.log(`MongoDB: ${MONGO_URI}\n`);
 
   const { exec } = require('child_process');
   const url = `http://localhost:${PORT}`;
   const cmd = process.platform === 'win32' ? `start ${url}`
-    : process.platform === 'darwin' ? `open ${url}`
-      : `xdg-open ${url}`;
-  exec(cmd, err => { if (err) console.log(`Open browser manually: ${url}`); });
+            : process.platform === 'darwin' ? `open ${url}`
+            : `xdg-open ${url}`;
+  
+  exec(cmd, (err) => { 
+      if (err) {
+          console.log(`Open browser manually: ${url}`);
+      }
+  });
 });
