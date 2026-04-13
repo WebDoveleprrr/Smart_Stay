@@ -560,7 +560,8 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
       const base64Data = req.file ? req.file.buffer.toString("base64") : null;
       if (base64Data) {
         try {
-          const aiRes = await fetch('http://localhost:8000/embed', {
+          console.log("Calling AI embed...");
+          const aiRes = await fetch('http://127.0.0.1:8000/embed', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image_base64: base64Data }),
@@ -588,7 +589,35 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
         embedding: embedding,
         status: 'Open'
       });
+      // 🔥 CALL MATCHING AFTER SAVE
+      let matches = [];
 
+      try {
+        const matchRes = await fetch("http://127.0.0.1:8000/similarity", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            source_embedding: item.embedding,
+            candidates: (await LostFound.find({
+              type: item.type === 'Lost' ? 'Found' : 'Lost',
+              _id: { $ne: item._id }
+            }))
+              .filter(c => c.embedding && c.embedding.length)
+              .map(c => ({
+                id: c._id,
+                embedding: c.embedding
+              }))
+          })
+        });
+
+        const matchData = await matchRes.json();
+        matches = matchData.matches || [];
+
+      } catch (err) {
+        console.log("Matching failed:", err);
+      }
       const user = await User.findById(req.session.userId);
       if (user?.email) {
         let attachments = [];
@@ -648,7 +677,7 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
     });
 
     const validCandidates = candidates.filter(c => c.embedding && c.embedding.length > 0);
-    
+
     let aiData = { matches: [] };
 
     if (item.embedding && item.embedding.length > 0 && validCandidates.length > 0) {
@@ -656,50 +685,51 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
         source_embedding: item.embedding,
         candidates: validCandidates.map(c => ({ id: c._id.toString(), embedding: c.embedding }))
       };
-      
+
       try {
-        const aiRes = await fetch('http://localhost:8000/similarity', {
+        console.log("Calling AI similarity...");
+        const aiRes = await fetch('http://127.0.0.1:8000/similarity', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(reqBody),
           signal: AbortSignal.timeout(3000)
         });
         if (aiRes.ok) {
-           aiData = await aiRes.json();
+          aiData = await aiRes.json();
         } else {
-           throw new Error("AI Service status " + aiRes.status);
+          throw new Error("AI Service status " + aiRes.status);
         }
       } catch (err) {
         console.log("AI unavailable, skipping matching");
       }
     }
-    
+
     // Strict Match filtering > 0.85 only
     if (aiData && aiData.matches) {
-       aiData.matches = aiData.matches.filter(m => m.score > 0.85);
+      aiData.matches = aiData.matches.filter(m => m.score > 0.85);
     } else {
-       aiData = { matches: [] };
+      aiData = { matches: [] };
     }
 
     const matchDetails = [];
     if (aiData && aiData.matches) {
-       for (const m of aiData.matches) {
-         let candDoc = candidates.find(c => c._id.toString() === m.id);
-         if (candDoc) {
-           const owner = await User.findById(candDoc.user_id);
-           matchDetails.push({
-             id: candDoc._id,
-             item_name: candDoc.item_name,
-             description: candDoc.description,
-             location: candDoc.location,
-             type: candDoc.type,
-             score: m.score,
-             image_url: candDoc.image ? `data:${candDoc.image.contentType};base64,${candDoc.image.data}` : null, 
-             user_name: owner?.name, 
-             user_email: owner?.email 
-           });
-         }
-       }
+      for (const m of aiData.matches) {
+        let candDoc = candidates.find(c => c._id.toString() === m.id);
+        if (candDoc) {
+          const owner = await User.findById(candDoc.user_id);
+          matchDetails.push({
+            id: candDoc._id,
+            item_name: candDoc.item_name,
+            description: candDoc.description,
+            location: candDoc.location,
+            type: candDoc.type,
+            score: m.score,
+            image_url: candDoc.image ? `data:${candDoc.image.contentType};base64,${candDoc.image.data}` : null,
+            user_name: owner?.name,
+            user_email: owner?.email
+          });
+        }
+      }
     }
     const sourceImageUrl = item.image ? `data:${item.image.contentType};base64,${item.image.data}` : null;
     res.json({ matches: matchDetails, source_image_url: sourceImageUrl });
@@ -715,7 +745,7 @@ app.post('/api/confirm-match', requireAuth, async (req, res) => {
     const source = await LostFound.findById(source_id);
     const target = await LostFound.findById(target_id);
     if (!source || !target) return res.status(404).json({ error: 'Item not found.' });
-    
+
     source.status = 'Closed';
     source.matched_id = target._id;
     target.status = 'Closed';
@@ -730,20 +760,20 @@ app.post('/api/confirm-match', requireAuth, async (req, res) => {
 
     // Construct email templates
     const sendMatchEmails = (user, item, matchedItemTitle) => {
-       if (!user?.email) return;
-       if (item.type === 'Lost') {
-           sendMail(
-             user.email,
-             "Your lost item has been found",
-             `Hello ${user.name},\n\nGood news! Your lost item '${item.item_name}' has been matched with a found item.\n\nPlease check your dashboard for details.\n\n- Smart Stay`
-           );
-       } else {
-           sendMail(
-             user.email,
-             "Match confirmed for found item",
-             `Hello ${user.name},\n\nThe item you reported has been successfully matched with a lost report and the case is now closed.\n\n- Smart Stay`
-           );
-       }
+      if (!user?.email) return;
+      if (item.type === 'Lost') {
+        sendMail(
+          user.email,
+          "Your lost item has been found",
+          `Hello ${user.name},\n\nGood news! Your lost item '${item.item_name}' has been matched with a found item.\n\nPlease check your dashboard for details.\n\n- Smart Stay`
+        );
+      } else {
+        sendMail(
+          user.email,
+          "Match confirmed for found item",
+          `Hello ${user.name},\n\nThe item you reported has been successfully matched with a lost report and the case is now closed.\n\n- Smart Stay`
+        );
+      }
     };
 
     sendMatchEmails(sOwner, source, target.item_name);
@@ -781,7 +811,7 @@ app.patch('/api/lost-found/:id', requireAuth, async (req, res) => {
     } else {
       await LostFound.findOneAndUpdate({ _id: req.params.id, user_id: req.session.userId }, { status });
     }
-    res.json({ success: true });
+    res.json({ success: true, matches });
   } catch (err) { res.status(500).json({ error: 'Update failed.' }); }
 });
 
@@ -813,12 +843,12 @@ app.listen(PORT, () => {
   const { exec } = require('child_process');
   const url = `http://localhost:${PORT}`;
   const cmd = process.platform === 'win32' ? `start ${url}`
-            : process.platform === 'darwin' ? `open ${url}`
-            : `xdg-open ${url}`;
-  
-  exec(cmd, (err) => { 
-      if (err) {
-          console.log(`Open browser manually: ${url}`);
-      }
+    : process.platform === 'darwin' ? `open ${url}`
+      : `xdg-open ${url}`;
+
+  exec(cmd, (err) => {
+    if (err) {
+      console.log(`Open browser manually: ${url}`);
+    }
   });
 });
