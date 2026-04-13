@@ -195,7 +195,8 @@ const lostFoundSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   location: { type: String, default: '' },
   image: { data: String, contentType: String },
-  status: { type: String, default: 'Open' },
+  embedding: { type: [Number], default: [] },
+  status: { type: String, default: 'Open', enum: ['Open', 'Closed'] },
   matched_id: { type: String, default: null },
   created_at: { type: Number, default: () => Math.floor(Date.now() / 1000) }
 });
@@ -555,6 +556,24 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
     const { type, item_name, description, location } = req.body;
     if (!type || !item_name) return res.status(400).json({ error: 'Type and item name required.' });
     try {
+      let embedding = [];
+      const base64Data = req.file ? req.file.buffer.toString("base64") : null;
+      if (base64Data) {
+        try {
+          const aiRes = await fetch('http://localhost:8000/embed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_base64: base64Data })
+          });
+          if (aiRes.ok) {
+            const data = await aiRes.json();
+            embedding = data.embedding || [];
+          }
+        } catch (e) {
+          console.error("AI Service Error:", e.message);
+        }
+      }
+
       let item = await LostFound.create({
         user_id: req.session.userId,
         type,
@@ -562,68 +581,12 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
         description: description || '',
         location: location || '',
         image: req.file ? {
-          data: req.file.buffer.toString("base64"),
+          data: base64Data,
           contentType: req.file.mimetype
         } : null,
+        embedding: embedding,
         status: 'Open'
       });
-
-      // AUTO-CLOSE LOGIC: Match Lost & Found dynamically via Candidate Scoring
-      const oppositeType = type === 'Lost' ? 'Found' : 'Lost';
-      const candidates = await LostFound.find({
-        type: oppositeType,
-        item_name: new RegExp('^' + item_name + '$', 'i'),
-        status: { $ne: 'Closed' }
-      });
-
-      if (candidates.length > 0) {
-        let bestCandidate = null;
-        let maxScore = -1;
-        for (const c of candidates) {
-          let score = 0;
-          if (c.image) score += 2; // Stronger match if photo exists
-          if (description && c.description) {
-            const descWords1 = description.toLowerCase().split(/\s+/);
-            const descWords2 = c.description.toLowerCase().split(/\s+/);
-            const common = descWords1.filter(w => descWords2.includes(w) && w.length > 2);
-            score += common.length; // +1 score for each overlapping descriptive keyword
-          }
-          if (location && c.location) {
-            const locWords1 = location.toLowerCase().split(/\s+/);
-            const locWords2 = c.location.toLowerCase().split(/\s+/);
-            const commonLoc = locWords1.filter(w => locWords2.includes(w) && w.length > 2);
-            score += commonLoc.length * 2; // +2 score for matching location words
-          }
-          if (score > maxScore) {
-            maxScore = score;
-            bestCandidate = c;
-          }
-        }
-        if (bestCandidate) {
-          bestCandidate.status = 'Closed';
-          bestCandidate.matched_id = item._id.toString();
-          await bestCandidate.save();
-          item.status = 'Closed';
-          item.matched_id = bestCandidate._id.toString();
-
-          // Send email to the matched user
-          try {
-            const candidateUser = await User.findById(bestCandidate.user_id);
-            if (candidateUser && candidateUser.email) {
-              sendMail(
-                candidateUser.email,
-                "Match Found for Your Item",
-                `Hello ${candidateUser.name},\n\nGreat news! A match was found for your reported ${bestCandidate.type.toLowerCase()} item: ${bestCandidate.item_name}.\n\nThe status has been updated. Please check the portal.`,
-                [],
-                bestCandidate.status
-              );
-            }
-          } catch (err) {
-            console.error('Error sending match email:', err);
-          }
-        }
-      }
-      await item.save();
 
       const user = await User.findById(req.session.userId);
       if (user?.email) {
@@ -666,9 +629,102 @@ Description: ${description}
 - Smart Stay`, attachments, item.status);
 
       }
-      res.json({ success: true, message: 'Report posted! Confirmation email sent.', id: item._id });
+      res.json({ success: true, message: 'Report posted!', id: item._id, embeddingGenerated: embedding.length > 0 });
     } catch (err) { res.status(500).json({ error: 'Failed to post.' }); }
   });
+});
+
+app.post('/api/match-image', requireAuth, async (req, res) => {
+  const { id } = req.body;
+  try {
+    const item = await LostFound.findById(id);
+    if (!item) return res.status(404).json({ error: 'Item not found.' });
+    if (!item.embedding || item.embedding.length === 0) {
+      return res.json({ matches: [] });
+    }
+
+    const oppositeType = item.type === 'Lost' ? 'Found' : 'Lost';
+    const candidates = await LostFound.find({
+      type: oppositeType,
+      status: 'Open',
+      _id: { $ne: item._id }
+    });
+
+    const validCandidates = candidates.filter(c => c.embedding && c.embedding.length > 0);
+    if (validCandidates.length === 0) {
+       return res.json({ matches: [] });
+    }
+
+    const reqBody = {
+      source_embedding: item.embedding,
+      candidates: validCandidates.map(c => ({ id: c._id.toString(), embedding: c.embedding }))
+    };
+
+    const aiRes = await fetch('http://localhost:8000/similarity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reqBody)
+    });
+    if (!aiRes.ok) throw new Error("AI Service Similarity Failed");
+    const aiData = await aiRes.json();
+    
+    const matchDetails = [];
+    for (const m of aiData.matches) {
+       let candDoc = validCandidates.find(c => c._id.toString() === m.id);
+       if (candDoc) {
+          const owner = await User.findById(candDoc.user_id);
+          matchDetails.push({ 
+            id: candDoc._id,
+            item_name: candDoc.item_name,
+            description: candDoc.description,
+            location: candDoc.location,
+            type: candDoc.type,
+            score: m.score, 
+            image_url: candDoc.image ? \`data:\${candDoc.image.contentType};base64,\${candDoc.image.data}\` : null, 
+            user_name: owner?.name, 
+            user_email: owner?.email 
+          });
+       }
+    }
+    
+    res.json({ matches: matchDetails });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to find matches.' });
+  }
+});
+
+app.post('/api/confirm-match', requireAuth, async (req, res) => {
+  const { source_id, target_id } = req.body;
+  try {
+    const source = await LostFound.findById(source_id);
+    const target = await LostFound.findById(target_id);
+    if (!source || !target) return res.status(404).json({ error: 'Item not found.' });
+    
+    source.status = 'Closed';
+    source.matched_id = target._id;
+    target.status = 'Closed';
+    target.matched_id = source._id;
+
+    await source.save();
+    await target.save();
+
+    // Send emails
+    const sOwner = await User.findById(source.user_id);
+    const tOwner = await User.findById(target.user_id);
+
+    if (sOwner?.email) {
+       sendMail(sOwner.email, "Match Confirmed for Your Item", \`Hello \${sOwner.name},\n\nYour \${source.type.toLowerCase()} item '\${source.item_name}' has been successfully matched and the case is now closed.\n\n- Smart Stay\`);
+    }
+    if (tOwner?.email) {
+       sendMail(tOwner.email, "Match Confirmed for Your Item", \`Hello \${tOwner.name},\n\nYour \${target.type.toLowerCase()} item '\${target.item_name}' has been successfully matched and the case is now closed.\n\n- Smart Stay\`);
+    }
+
+    res.json({ success: true, message: 'Match confirmed and cases closed.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to confirm match.' });
+  }
 });
 
 app.get('/api/lost-found', requireAuth, async (req, res) => {

@@ -1145,6 +1145,21 @@
         </div>
       </div>
 
+      <!-- AI MATCH MODAL -->
+      <div id="matchModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2000; align-items:center; justify-content:center;">
+        <div style="background:var(--surface); padding:24px; border-radius:12px; width:90%; max-width:550px; box-shadow:0 8px 30px rgba(0,0,0,0.3);">
+          <h3 style="margin-top:0; color:var(--text); display:flex; justify-content:space-between; align-items:center;">
+            <span>🤖 AI Confidence Matches</span>
+            <button onclick="document.getElementById('matchModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.5rem;color:var(--text);">&times;</button>
+          </h3>
+          <div style="font-size:0.9rem; color:var(--muted); margin-bottom:15px;">Our AI detected the following potential matches for your reported item based on visual similarity.</div>
+          <div id="matchModalContent" style="max-height:60vh; overflow-y:auto; margin:15px 0; display:flex; flex-direction:column; gap:12px;"></div>
+          <div style="text-align:right;">
+            <button class="btn" style="background:var(--muted); border:none;" onclick="document.getElementById('matchModal').style.display='none'">Dismiss</button>
+          </div>
+        </div>
+      </div>
+
       <!-- PROFILE -->
       <div class="page" id="page-profile">
         <div style="max-width:480px;">
@@ -1331,15 +1346,35 @@
       const type = document.getElementById('lfType').value;
       const item_name = document.getElementById('lfName').value.trim();
       if (!item_name) return showMsg('lfMsg', 'Item name required.', 'error');
+      
+      showMsg('lfMsg', 'Uploading & Finding matches...', 'success');
       const fd = new FormData();
       fd.append('type', type); fd.append('item_name', item_name);
       fd.append('description', document.getElementById('lfDesc').value);
       fd.append('location', document.getElementById('lfLocation').value);
       const photo = document.getElementById('photoInput').files[0];
       if (photo) fd.append('image', photo);
+      
       const res = await fetch('https://smart-stay-0gxx.onrender.com/api/lost-found', { method: 'POST', credentials: 'include', body: fd });
       const d = await res.json();
       if (d.error) return showMsg('lfMsg', d.error, 'error');
+      
+      showMsg('lfMsg', 'Analyzing image similarity...', 'success');
+      
+      try {
+        const matchRes = await fetch('https://smart-stay-0gxx.onrender.com/api/match-image', { 
+            method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id: d.id })
+        });
+        const mData = await matchRes.json();
+        
+        if (mData.matches && mData.matches.length > 0) {
+            showMatchModal(d.id, mData.matches);
+        }
+      } catch (e) {
+         console.warn("Match detection error:", e);
+      }
+
       showMsg('lfMsg', d.message, 'success');
       document.getElementById('lfName').value = '';
       document.getElementById('lfDesc').value = '';
@@ -1348,6 +1383,56 @@
       document.getElementById('previewImage').src = '';
       document.getElementById('caseNum').textContent = String(Math.floor(Math.random() * 9000) + 1000);
       loadLF(); loadOverview();
+    }
+
+    function showMatchModal(sourceId, matches) {
+      const mContent = document.getElementById('matchModalContent');
+      mContent.innerHTML = matches.map(m => {
+          const simScore = (m.score * 100).toFixed(1);
+          const isHigh = m.score > 0.90;
+          return \`
+          <div style="border:1px solid \${isHigh ? 'var(--amber)' : 'var(--border)'}; padding:12px; border-radius:8px; display:flex; gap:12px; align-items:center; background:var(--surface2);">
+            <div style="width:70px; height:70px; border-radius:6px; overflow:hidden; background:#eee; flex-shrink:0;">
+              \${m.image_url ? \`<img src="\${m.image_url}" style="width:100%;height:100%;object-fit:cover;" />\` : '<div style="font-size:2rem;text-align:center;line-height:70px;">📦</div>'}
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight:bold; color:var(--text);">\${m.item_name}</div>
+              <div style="font-size:0.8rem; color:var(--muted); margin-bottom:4px;">\${m.type} • \${m.location || 'Unknown loc'}</div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.85rem; font-weight:bold; color:\${isHigh ? 'var(--success)' : 'var(--amber)'};">
+                  \${isHigh ? '🔥 High Match' : 'Similarity'}: \${simScore}%
+                </span>
+                <button class="btn" style="padding:4px 10px; font-size:0.8rem; background:var(--success);" onclick="confirmAIMatch('\${sourceId}', '\${m.id}')">Confirm</button>
+              </div>
+            </div>
+          </div>\`;
+      }).join('');
+      document.getElementById('matchModal').style.display = 'flex';
+      
+      if (matches[0].score > 0.90) {
+          alert('High confidence match found! Please review the matches.');
+      }
+    }
+
+    async function confirmAIMatch(sourceId, targetId) {
+       if(!confirm('Are you sure you want to mark these items as a match? Both cases will be closed.')) return;
+       try {
+         const res = await fetch('https://smart-stay-0gxx.onrender.com/api/confirm-match', {
+            method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ source_id: sourceId, target_id: targetId })
+         });
+         const d = await res.json();
+         if(d.error) {
+            alert(d.error);
+         } else {
+            alert('Match confirmed successfully!');
+            document.getElementById('matchModal').style.display = 'none';
+            loadLF(); loadOverview();
+         }
+       } catch(e) {
+         console.error(e);
+         alert("Error confirming match.");
+       }
     }
 
     async function loadLF() {
