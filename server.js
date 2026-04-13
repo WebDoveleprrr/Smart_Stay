@@ -670,17 +670,15 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
            throw new Error("AI Service status " + aiRes.status);
         }
       } catch (e) {
-        console.log("AI unavailable or failed, using fallback matching");
-        aiData = null;
+        console.log("AI unavailable or failed");
       }
-    } else {
-       console.log("AI unavailable, using fallback matching");
-       aiData = null;
     }
-
-    // FALLBACK LOGIC
-    if (!aiData && candidates.length > 0) {
-        aiData = { matches: [{ id: candidates[0]._id.toString(), score: 0.90 }] };
+    
+    // Strict Match filtering > 0.85 only
+    if (aiData && aiData.matches) {
+       aiData.matches = aiData.matches.filter(m => m.score > 0.85);
+    } else {
+       aiData = { matches: [] };
     }
 
     const matchDetails = [];
@@ -703,8 +701,8 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
          }
        }
     }
-    
-    res.json({ matches: matchDetails });
+    const sourceImageUrl = item.image ? `data:${item.image.contentType};base64,${item.image.data}` : null;
+    res.json({ matches: matchDetails, source_image_url: sourceImageUrl });
   } catch (err) {
     console.error("Match error:", err);
     res.status(500).json({ error: 'Failed to find matches.' });
@@ -730,20 +728,27 @@ app.post('/api/confirm-match', requireAuth, async (req, res) => {
     const sOwner = await User.findById(source.user_id);
     const tOwner = await User.findById(target.user_id);
 
-    if (sOwner?.email) {
-       sendMail(
-         sOwner.email, 
-         "Match Confirmed for Your Item", 
-         `Hello ${sOwner.name},\n\nYour ${source.type.toLowerCase()} item '${source.item_name}' has been successfully matched and the case is now closed.\n\n- Smart Stay`
-       );
-    }
-    if (tOwner?.email) {
-       sendMail(
-         tOwner.email, 
-         "Match Confirmed for Your Item", 
-         `Hello ${tOwner.name},\n\nYour ${target.type.toLowerCase()} item '${target.item_name}' has been successfully matched and the case is now closed.\n\n- Smart Stay`
-       );
-    }
+    // Construct email templates
+    const sendMatchEmails = (user, item, matchedItemTitle) => {
+       if (!user?.email) return;
+       if (item.type === 'Lost') {
+           sendMail(
+             user.email,
+             "Your lost item has been found",
+             `Hello ${user.name},\n\nGood news! Your lost item '${item.item_name}' has been matched with a found item.\n\nPlease check your dashboard for details.\n\n- Smart Stay`
+           );
+       } else {
+           sendMail(
+             user.email,
+             "Match confirmed for found item",
+             `Hello ${user.name},\n\nThe item you reported has been successfully matched with a lost report and the case is now closed.\n\n- Smart Stay`
+           );
+       }
+    };
+
+    sendMatchEmails(sOwner, source, target.item_name);
+    sendMatchEmails(tOwner, target, source.item_name);
+
     res.json({ success: true, message: 'Match confirmed and cases closed.' });
   } catch (err) {
     console.error(err);

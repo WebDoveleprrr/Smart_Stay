@@ -1369,7 +1369,7 @@
         const mData = await matchRes.json();
         
         if (mData.matches && mData.matches.length > 0) {
-            showMatchModal(d.id, mData.matches);
+            showMatchModal(d.id, mData.matches, mData.source_image_url);
             showMsg('lfMsg', 'Matches found! Please review the modal.', 'success');
         } else {
             showMsg('lfMsg', d.message, 'success');
@@ -1388,25 +1388,43 @@
       loadLF(); loadOverview();
     }
 
-    function showMatchModal(sourceId, matches) {
+    function showMatchModal(sourceId, matches, sourceImageUrl) {
       const mContent = document.getElementById('matchModalContent');
       mContent.innerHTML = matches.map(m => {
           const simScore = (Math.max(m.score, 0.0) * 100).toFixed(1);
           const isHigh = m.score >= 0.85;
           return `
-          <div style="border:1px solid ${isHigh ? 'var(--amber)' : 'var(--border)'}; padding:12px; border-radius:8px; display:flex; gap:12px; align-items:center; background:var(--surface2);">
-            <div style="width:70px; height:70px; border-radius:6px; overflow:hidden; background:#eee; flex-shrink:0;">
-              ${m.image_url ? `<img src="${m.image_url}" style="width:100%;height:100%;object-fit:cover;" />` : '<div style="font-size:2rem;text-align:center;line-height:70px;">📦</div>'}
+          <div style="border:1px solid ${isHigh ? 'var(--amber)' : 'var(--border)'}; padding:12px; border-radius:8px; display:flex; flex-direction:column; gap:8px; background:var(--surface2);">
+            <div style="display:flex; gap:12px; align-items:center;">
+                <div style="flex:1; text-align:center;">
+                    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:4px;">Uploaded</div>
+                    <div style="width:100%; height:90px; border-radius:6px; overflow:hidden; background:#eee; border:1px solid var(--border);">
+                      ${sourceImageUrl ? `<img src="${sourceImageUrl}" style="width:100%;height:100%;object-fit:cover;" />` : '<div style="font-size:2rem;line-height:90px;">🖼️</div>'}
+                    </div>
+                </div>
+                <div style="padding:0 5px; color:var(--amber); font-weight:bold; font-size:1.1rem;">
+                    ⇌
+                </div>
+                <div style="flex:1; text-align:center;">
+                    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:4px;">Matched Match</div>
+                    <div style="width:100%; height:90px; border-radius:6px; overflow:hidden; background:#eee; border:2px solid ${isHigh ? 'var(--amber)' : 'var(--border)'};">
+                      ${m.image_url ? `<img src="${m.image_url}" style="width:100%;height:100%;object-fit:cover;" />` : '<div style="font-size:2rem;line-height:90px;">📦</div>'}
+                    </div>
+                </div>
             </div>
-            <div style="flex:1;">
-              <div style="font-weight:bold; color:var(--text);">${m.item_name}</div>
-              <div style="font-size:0.8rem; color:var(--muted); margin-bottom:4px;">${m.type} • ${m.location || 'Unknown loc'}</div>
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:0.85rem; font-weight:bold; color:${isHigh ? 'var(--success)' : 'var(--amber)'};">
-                  ${isHigh ? '🔥 High Match' : 'Similarity'}: ${simScore}%
-                </span>
-                <button class="btn" style="padding:4px 10px; font-size:0.8rem; background:var(--success);" onclick="confirmAIMatch('${sourceId}', '${m.id}')">Confirm</button>
-              </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px;">
+                <div>
+                  <div style="font-weight:bold; color:var(--text);">${m.item_name}</div>
+                  <div style="font-size:0.8rem; color:var(--muted);">${m.type} • ${m.location || 'Unknown loc'}</div>
+                  <div style="font-size:0.85rem; font-weight:bold; color:${isHigh ? 'var(--success)' : 'var(--amber)'}; margin-top:2px;">
+                    ${isHigh ? '🔥 High Match' : 'Similarity'}: ${simScore}%
+                  </div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn" style="padding:6px 12px; font-size:0.8rem; background:var(--muted);" onclick="document.getElementById('matchModal').style.display='none'">❌ Ignore</button>
+                  <button class="btn" style="padding:6px 12px; font-size:0.8rem; background:var(--success);" onclick="confirmAIMatch('${sourceId}', '${m.id}')">✅ Confirm Match</button>
+                </div>
             </div>
           </div>`;
       }).join('');
