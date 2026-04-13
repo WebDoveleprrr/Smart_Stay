@@ -903,8 +903,8 @@
          const mContent = document.getElementById('matchModalContent');
          if (mData.matches && mData.matches.length > 0) {
             mContent.innerHTML = mData.matches.map(m => {
-                const simScore = (m.score * 100).toFixed(1);
-                const isHigh = m.score > 0.90;
+                const simScore = (Math.max(m.score, 0.0) * 100).toFixed(1);
+                const isHigh = m.score >= 0.85;
                 return `
                 <div style="border:1px solid ${isHigh ? 'var(--amber)' : 'var(--border)'}; padding:12px; border-radius:8px; display:flex; gap:12px; align-items:center; background:var(--surface2);">
                   <div style="width:70px; height:70px; border-radius:6px; overflow:hidden; background:#eee; flex-shrink:0;">

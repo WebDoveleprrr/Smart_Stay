@@ -1370,12 +1370,15 @@
         
         if (mData.matches && mData.matches.length > 0) {
             showMatchModal(d.id, mData.matches);
+            showMsg('lfMsg', 'Matches found! Please review the modal.', 'success');
+        } else {
+            showMsg('lfMsg', d.message, 'success');
         }
       } catch (e) {
          console.warn("Match detection error:", e);
+         showMsg('lfMsg', d.message, 'success');
       }
 
-      showMsg('lfMsg', d.message, 'success');
       document.getElementById('lfName').value = '';
       document.getElementById('lfDesc').value = '';
       document.getElementById('lfLocation').value = '';
@@ -1388,8 +1391,8 @@
     function showMatchModal(sourceId, matches) {
       const mContent = document.getElementById('matchModalContent');
       mContent.innerHTML = matches.map(m => {
-          const simScore = (m.score * 100).toFixed(1);
-          const isHigh = m.score > 0.90;
+          const simScore = (Math.max(m.score, 0.0) * 100).toFixed(1);
+          const isHigh = m.score >= 0.85;
           return `
           <div style="border:1px solid ${isHigh ? 'var(--amber)' : 'var(--border)'}; padding:12px; border-radius:8px; display:flex; gap:12px; align-items:center; background:var(--surface2);">
             <div style="width:70px; height:70px; border-radius:6px; overflow:hidden; background:#eee; flex-shrink:0;">
@@ -1409,7 +1412,7 @@
       }).join('');
       document.getElementById('matchModal').style.display = 'flex';
       
-      if (matches[0].score > 0.90) {
+      if (matches[0] && matches[0].score >= 0.85) {
           alert('High confidence match found! Please review the matches.');
       }
     }
