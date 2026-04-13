@@ -1,4 +1,4 @@
-require('dotenv').config({ override: true });
+require('dotenv').config();
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const express = require('express');
@@ -29,7 +29,7 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 //  Replace with your MongoDB Atlas connection string when deploying
 //  OR keep as-is for local MongoDB
 // ══════════════════════════════════════════════════════════════════
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://bikkinarohitchowdary_db_user:Rohit%401234@cluster0.n1qszgd.mongodb.net/smartstay';
+const uri = process.env.MONGO_URI;
 
 // ── Admin Credentials ─────────────────────────────────────────────
 const ADMIN_EMAIL = 'bikkinarohitchowdary@gmail.com';
@@ -109,7 +109,7 @@ app.use(express.static(path.join(__dirname)));
 app.use('/uploads', express.static(uploadsDir));
 
 // ── MongoDB Connection ────────────────────────────────────────────
-mongoose.connect(MONGO_URI)
+mongoose.connect(uri)
   .then(() => {
     console.log('Connected to MongoDB');
     seedAdmin();
@@ -125,7 +125,7 @@ app.use(session({
   secret: 'smartstay_secret_2024_hostel',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: MONGO_URI, ttl: 86400 }),
+  store: MongoStore.create({ mongoUrl: uri, ttl: 86400 }),
   cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
 }));
 
@@ -570,8 +570,8 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
             const data = await aiRes.json();
             embedding = data.embedding || [];
           }
-        } catch (e) {
-          console.error("AI Service Error:", e.message);
+        } catch (err) {
+          console.log("AI unavailable, skipping matching");
         }
       }
 
@@ -669,8 +669,8 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
         } else {
            throw new Error("AI Service status " + aiRes.status);
         }
-      } catch (e) {
-        console.log("AI unavailable or failed");
+      } catch (err) {
+        console.log("AI unavailable, skipping matching");
       }
     }
     
@@ -808,7 +808,7 @@ app.listen(PORT, () => {
   console.log(`\nSmart Stay running at http://localhost:${PORT}`);
   console.log(`Admin: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
   console.log(`Mail: ${process.env.EMAIL_USER}`);
-  console.log(`MongoDB: ${MONGO_URI}\n`);
+  console.log(`MongoDB: ${uri}\n`);
 
   const { exec } = require('child_process');
   const url = `http://localhost:${PORT}`;
