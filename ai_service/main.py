@@ -5,11 +5,12 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
 from PIL import Image
-import torch
 import torchvision.transforms as transforms
 from torchvision.models import mobilenet_v2, MobileNet_V2_Weights
 import os
 from fastapi.middleware.cors import CORSMiddleware
+import torch
+torch.set_grad_enabled(False)
 
 app = FastAPI(title="Smart Stay AI Service")
 
@@ -69,7 +70,7 @@ def get_embedding(image: Image.Image) -> np.ndarray:
         features = model.features(input_batch)          # extract feature maps
         features = torch.nn.functional.adaptive_avg_pool2d(features, (1, 1))
         features = torch.flatten(features, 1)           # shape: [1, 1280]
-    return features.squeeze().numpy()
+    return features.squeeze().detach().cpu().numpy()
 
 @app.post("/embed", response_model=EmbedResponse)
 def embed_image(req: EmbedRequest):
