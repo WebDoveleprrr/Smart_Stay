@@ -64,13 +64,14 @@ class MatchResponse(BaseModel):
 def get_embedding(image: Image.Image) -> np.ndarray:
     if image.mode != 'RGB':
         image = image.convert('RGB')
+
     input_tensor = preprocess(image)
     input_batch = input_tensor.unsqueeze(0)
+
     with torch.no_grad():
-        features = model.features(input_batch)          # extract feature maps
-        features = torch.nn.functional.adaptive_avg_pool2d(features, (1, 1))
-        features = torch.flatten(features, 1)           # shape: [1, 1280]
-    return features.squeeze().detach().cpu().numpy()
+        output = model(input_batch)   # ✅ use full model forward
+
+    return output.squeeze().detach().cpu().numpy()
 
 @app.post("/embed", response_model=EmbedResponse)
 def embed_image(req: EmbedRequest):
@@ -80,9 +81,17 @@ def embed_image(req: EmbedRequest):
         if ',' in img_str:
             img_str = img_str.split(',', 1)[1]
         
+        print("STEP 1: base64 received")
+        
         image_data = base64.b64decode(img_str)
         image = Image.open(io.BytesIO(image_data))
+
+        print("STEP 2: image loaded")
+
         embedding = get_embedding(image)
+
+        print("STEP 3: embedding computed", len(embedding))
+
         return {"embedding": embedding.tolist()}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
