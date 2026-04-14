@@ -1,6 +1,10 @@
 require('dotenv').config();
 const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+} else {
+  console.warn('WARNING: SENDGRID_API_KEY not set. Emails will be skipped.');
+}
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
@@ -27,10 +31,14 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 //  OR keep as-is for local MongoDB
 // ══════════════════════════════════════════════════════════════════
 const uri = process.env.MONGO_URI;
+if (!uri) {
+  console.error('FATAL: MONGO_URI environment variable is not set.');
+  process.exit(1);
+}
 
 // ── Admin Credentials ─────────────────────────────────────────────
-const ADMIN_EMAIL = 'bikkinarohitchowdary@gmail.com';
-const ADMIN_PASSWORD = 'Rohit@1234';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'bikkinarohitchowdary@gmail.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Rohit@1234';
 
 function sendMail(to, subject, textContent, attachments = [], status = null) {
   let statusHtml = '';
@@ -92,6 +100,10 @@ function sendMail(to, subject, textContent, attachments = [], status = null) {
   }
 
   setImmediate(() => {
+    if (!process.env.SENDGRID_API_KEY) {
+      console.log(`[MAIL SKIPPED - no key] To: ${to} | Subject: ${subject}`);
+      return;
+    }
     sgMail.send(msg)
       .then(() => console.log(`Email sent to ${to}`))
       .catch(err => console.error("ERROR:", err.response?.body || err.message));
@@ -99,13 +111,25 @@ function sendMail(to, subject, textContent, attachments = [], status = null) {
 }
 
 // ── Middleware ────────────────────────────────────────────────────
-app.use(cors({ origin: "https://smart-stay-0gxx.onrender.com", credentials: true }));
+const allowedOrigins = [
+  "https://smart-stay-0gxx.onrender.com",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000"
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) callback(null, true);
+    else callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ── Session (stored in MongoDB) ───────────────────────────────────
 app.use(session({
-  secret: 'smartstay_secret_2024_hostel',
+  secret: process.env.SESSION_SECRET || 'smartstay_secret_2024_hostel',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
@@ -114,7 +138,12 @@ app.use(session({
     autoRemove: 'native',
     touchAfter: 24 * 3600
   }),
-  cookie: { secure: true, sameSite: 'none', httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000
+  }
 }));
 
 app.use(express.static(path.join(__dirname)));
@@ -302,7 +331,10 @@ app.post('/api/login', async (req, res) => {
       req.session.userName = user.name;
       req.session.userRole = user.role;
       req.session.verified = true;
-      return res.json({ success: true, name: user.name, role: user.role, message: 'Admin login successful' });
+      return req.session.save((err) => {
+        if (err) return res.status(500).json({ error: 'Session error.' });
+        res.json({ success: true, name: user.name, role: user.role, message: 'Admin login successful' });
+      });
     }
 
     // NORMAL USER → OTP FLOW
@@ -715,7 +747,7 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
 
     let aiData = { matches: [] };
 
-    if (item.embedding && item.embedding.length > 0 && validCandidates.length > 0) {
+    if (AI_URL && item.embedding && item.embedding.length > 0 && validCandidates.length > 0) {
       const reqBody = {
         source_embedding: item.embedding,
         candidates: validCandidates.map(c => ({ id: c._id.toString(), embedding: c.embedding }))

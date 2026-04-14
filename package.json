@@ -1,6 +1,9 @@
 {
   "name": "smart-stay-backend",
   "version": "3.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "description": "Smart Stay Hostel Management — MongoDB Edition",
   "main": "server.js",
   "scripts": {
