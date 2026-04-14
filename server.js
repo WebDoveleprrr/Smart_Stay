@@ -11,15 +11,10 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const AI_URL = process.env.AI_URL || "http://127.0.0.1:8000";
+const AI_URL = process.env.AI_URL;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-app.use(cors({
-  origin: "*",
-  credentials: true
-}));
 
 // ✅ uploadsDir FIRST
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -127,7 +122,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: uri, ttl: 86400 }),
-  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
+  cookie: { secure: true, sameSite: "none", maxAge: 24 * 60 * 60 * 1000 }
 }));
 
 // ── File Uploads ──────────────────────────────────────────────────
