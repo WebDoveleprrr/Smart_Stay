@@ -66,7 +66,7 @@ def get_embedding(image: Image.Image) -> np.ndarray:
     input_tensor = preprocess(image)
     input_batch = input_tensor.unsqueeze(0)
     with torch.no_grad():
-        features = model(input_batch)
+        features = model.encode_image(input_batch)
     return features.squeeze().numpy()
 
 @app.post("/embed", response_model=EmbedResponse)

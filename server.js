@@ -608,12 +608,20 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
           });
           if (aiRes.ok) {
             const data = await aiRes.json();
+            console.log('[EMBED RESPONSE] keys:', Object.keys(data), 'length:', data.embedding?.length ?? 'N/A');
             if (Array.isArray(data.embedding) && data.embedding.length > 0) {
               embedding = data.embedding;
+            } else {
+              console.error('[EMBED] AI returned empty/invalid embedding:', JSON.stringify(data).substring(0, 200));
             }
+          } else {
+            const errText = await aiRes.text();
+            console.error('[EMBED] AI HTTP error', aiRes.status, errText.substring(0, 300));
           }
         } catch (err) {
-          console.log('AI embed unavailable:', err.message);
+          console.error('[EMBED FAILED] Full error:', err.message);
+          console.error('[EMBED FAILED] AI_URL was:', AI_URL + '/embed');
+          // embedding stays [] — item saves without embedding, matching disabled
         }
       }
       console.log("DEBUG DATA:", {
