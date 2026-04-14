@@ -578,7 +578,15 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
           console.log("AI unavailable:", err.message);
         }
       }
-
+      console.log("DEBUG DATA:", {
+        type,
+        item_name,
+        hasImage: !!req.file,
+        embeddingLength: embedding?.length
+      });
+      if (!req.file) {
+        console.log("No image uploaded");
+      }
       let item = await LostFound.create({
         user_id: req.session.userId,
         type,
@@ -589,7 +597,7 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
           data: base64Data,
           contentType: req.file.mimetype
         } : null,
-        embedding: embedding,
+        embedding: Array.isArray(embedding) ? embedding : [],
         status: 'Open'
       });
       // 🔥 CALL MATCHING AFTER SAVE
