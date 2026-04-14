@@ -11,7 +11,8 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const AI_URL = process.env.AI_URL;
+const AI_URL = process.env.AI_URL || null;
+if (!AI_URL) console.warn('WARNING: AI_URL not set. Image matching will be disabled.');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -98,9 +99,24 @@ function sendMail(to, subject, textContent, attachments = [], status = null) {
 }
 
 // ── Middleware ────────────────────────────────────────────────────
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: "https://smart-stay-0gxx.onrender.com", credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ── Session (stored in MongoDB) ───────────────────────────────────
+app.use(session({
+  secret: 'smartstay_secret_2024_hostel',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: uri,
+    ttl: 86400,
+    autoRemove: 'native',
+    touchAfter: 24 * 3600
+  }),
+  cookie: { secure: true, sameSite: 'none', httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
+}));
+
 app.use(express.static(path.join(__dirname)));
 app.use('/uploads', express.static(uploadsDir));
 
@@ -115,15 +131,6 @@ mongoose.connect(uri)
     console.log('Make sure MongoDB is running: mongod');
     process.exit(1);
   });
-
-// ── Session (stored in MongoDB) ───────────────────────────────────
-app.use(session({
-  secret: 'smartstay_secret_2024_hostel',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: uri, ttl: 86400 }),
-  cookie: { secure: true, sameSite: "none", maxAge: 24 * 60 * 60 * 1000 }
-}));
 
 // ── File Uploads ──────────────────────────────────────────────────
 const storage = multer.memoryStorage();
@@ -304,22 +311,18 @@ app.post('/api/login', async (req, res) => {
     await User.findByIdAndUpdate(user._id, { otp, otp_expires: expires });
     req.session.pendingUserId = user._id.toString();
 
-    sendMail(user.email, "Smart Stay Login Code",
-      `Hello ${user.name || 'User'},
-
-Your login code is: ${otp}
-
-Valid for 5 minutes.
-If not you, ignore.
-
-- Smart Stay`);
-
-    // Admin OTP removed per user request
-    console.log(`\nOTP for ${user.email}: ${otp}\n`);
-    res.json({ success: true, message: 'OTP sent to your registered email! Check your inbox.' });
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ error: 'Session error. Please try again.' });
+      }
+      sendMail(user.email, "Smart Stay Login Code",
+        `Hello ${user.name || 'User'},\n\nYour login code is: ${otp}\n\nValid for 5 minutes.\nIf not you, ignore.\n\n- Smart Stay`);
+      console.log(`\nOTP for ${user.email}: ${otp}\n`);
+      res.json({ success: true, message: 'OTP sent to your registered email! Check your inbox.' });
+    }); // prevent double response
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Login error.' });
+    return res.status(500).json({ error: 'Login error.' });
   }
 });
 
@@ -344,7 +347,11 @@ app.post('/api/verify-otp', async (req, res) => {
     req.session.userRole = user.role;
     req.session.verified = true;
     delete req.session.pendingUserId;
-    res.json({ success: true, name: user.name, role: user.role });
+    req.session.save((err) => {
+      if (err) return res.status(500).json({ error: 'Session save error.' });
+      res.json({ success: true, name: user.name, role: user.role });
+    });
+    return;
   } catch (err) {
     res.status(500).json({ error: 'OTP verification error.' });
   }
@@ -360,10 +367,10 @@ app.post('/api/resend-otp', async (req, res) => {
     const user = await User.findById(req.session.pendingUserId);
     if (!user) return res.status(404).json({ error: 'User not found.' });
 
-    user.otp = generateOTP();
-    user.otp_expires = Date.now() + 5 * 60 * 1000;
-
-    await user.save();
+    const newOtp = generateOTP();
+    const newExpires = Date.now() + 5 * 60 * 1000;
+    await User.findByIdAndUpdate(user._id, { otp: newOtp, otp_expires: newExpires });
+    user.otp = newOtp; // for email below
 
     sendMail(user.email, "Smart Stay Login Verification Code",
       `Hello ${user.name || 'User'},
@@ -384,7 +391,12 @@ If this was not you, please ignore.
   }
 });
 
-app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ success: true }); });
+app.post('/api/logout', (req, res) => {
+  req.session.destroy((err) => {
+    res.clearCookie('connect.sid', { path: '/' });
+    res.json({ success: true });
+  });
+});
 
 app.get('/api/session', (req, res) => {
   if (req.session?.userId && req.session?.verified)
@@ -553,24 +565,23 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
     if (!type || !item_name) return res.status(400).json({ error: 'Type and item name required.' });
     try {
       let embedding = [];
-      const base64Data = req.file ? req.file.buffer.toString("base64") : null;
-      if (base64Data) {
-        embedding = null;
-
+      const base64Data = req.file ? req.file.buffer.toString('base64') : null;
+      if (base64Data && AI_URL) {
         try {
-          const aiRes = await fetch(AI_URL + "/embed", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+          const aiRes = await fetch(AI_URL + '/embed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image_base64: base64Data }),
-            signal: AbortSignal.timeout(5000)
+            signal: AbortSignal.timeout(15000)
           });
-
           if (aiRes.ok) {
             const data = await aiRes.json();
-            embedding = data.embedding;
+            if (Array.isArray(data.embedding) && data.embedding.length > 0) {
+              embedding = data.embedding;
+            }
           }
         } catch (err) {
-          console.log("AI unavailable:", err.message);
+          console.log('AI embed unavailable:', err.message);
         }
       }
       console.log("DEBUG DATA:", {
@@ -595,34 +606,52 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
         embedding: Array.isArray(embedding) ? embedding : [],
         status: 'Open'
       });
-      // 🔥 CALL MATCHING AFTER SAVE
-      let matches = [];
+      // 🔥 AUTO-MATCH: notify opposite-type item owners on high-confidence match
+      if (embedding.length > 0 && AI_URL) {
+        try {
+          const oppositeType = type === 'Lost' ? 'Found' : 'Lost';
+          const candidates = await LostFound.find({
+            type: oppositeType,
+            status: 'Open',
+            _id: { $ne: item._id },
+            embedding: { $exists: true, $not: { $size: 0 } }
+          }).lean();
 
-      try {
-        const matchRes = await fetch(AI_URL + "/similarity", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            source_embedding: item.embedding,
-            candidates: (await LostFound.find({
-              type: item.type === 'Lost' ? 'Found' : 'Lost',
-              _id: { $ne: item._id }
-            }))
-              .filter(c => c.embedding && c.embedding.length)
-              .map(c => ({
-                id: c._id,
-                embedding: c.embedding
-              }))
-          })
-        });
+          const validCandidates = candidates.filter(c => c.embedding && c.embedding.length > 0);
 
-        const matchData = await matchRes.json();
-        matches = matchData.matches || [];
+          if (validCandidates.length > 0) {
+            const simRes = await fetch(AI_URL + '/similarity', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                source_embedding: embedding,
+                candidates: validCandidates.map(c => ({ id: c._id.toString(), embedding: c.embedding }))
+              }),
+              signal: AbortSignal.timeout(8000)
+            });
 
-      } catch (err) {
-        console.log("Matching failed:", err);
+            if (simRes.ok) {
+              const simData = await simRes.json();
+              const topMatches = (simData.matches || []).filter(m => m.score >= 0.85);
+
+              for (const match of topMatches.slice(0, 3)) {
+                const candDoc = validCandidates.find(c => c._id.toString() === match.id);
+                if (!candDoc) continue;
+                const candOwner = await User.findById(candDoc.user_id);
+                if (candOwner?.email) {
+                  const scoreStr = (match.score * 100).toFixed(1);
+                  sendMail(
+                    candOwner.email,
+                    type === 'Found' ? 'Your lost item may have been found!' : 'Someone reported a found item matching yours',
+                    `Hello ${candOwner.name},\n\nGood news! A new ${type.toLowerCase()} item report was posted that matches your ${candDoc.type.toLowerCase()} item "${candDoc.item_name}" with ${scoreStr}% image similarity.\n\nPlease log in to your dashboard to review the match and confirm if it is your item.\n\n- Smart Stay`
+                  );
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.log('Auto-match failed:', err.message);
+        }
       }
       const user = await User.findById(req.session.userId);
       if (user?.email) {
@@ -698,7 +727,7 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(reqBody),
-          signal: AbortSignal.timeout(3000)
+          signal: AbortSignal.timeout(30000)
         });
         if (aiRes.ok) {
           aiData = await aiRes.json();
@@ -710,10 +739,8 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
       }
     }
 
-    // Strict Match filtering > 0.85 only
-    if (aiData && aiData.matches) {
-      aiData.matches = aiData.matches.filter(m => m.score > 0.85);
-    } else {
+    // AI service already filters at >= 0.85; keep all returned matches
+    if (!aiData || !aiData.matches) {
       aiData = { matches: [] };
     }
 
@@ -846,15 +873,12 @@ app.listen(PORT, () => {
   console.log(`Mail: ${process.env.EMAIL_USER}`);
   console.log(`MongoDB: ${uri}\n`);
 
-  const { exec } = require('child_process');
-  const url = `http://localhost:${PORT}`;
-  const cmd = process.platform === 'win32' ? `start ${url}`
-    : process.platform === 'darwin' ? `open ${url}`
-      : `xdg-open ${url}`;
-
-  exec(cmd, (err) => {
-    if (err) {
-      console.log(`Open browser manually: ${url}`);
-    }
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    const { exec } = require('child_process');
+    const url = `http://localhost:${PORT}`;
+    const cmd = process.platform === 'win32' ? `start ${url}`
+      : process.platform === 'darwin' ? `open ${url}`
+        : `xdg-open ${url}`;
+    exec(cmd, () => { });
+  }
 });

@@ -8,8 +8,22 @@ from PIL import Image
 import torch
 import torchvision.transforms as transforms
 from torchvision.models import mobilenet_v2, MobileNet_V2_Weights
+import os
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Smart Stay AI Service")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[os.getenv("NODE_ORIGIN", "https://smart-stay-0gxx.onrender.com")],
+    allow_credentials=True,
+    allow_methods=["POST", "GET"],
+    allow_headers=["Content-Type"],
+)
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "model": "mobilenet_v2"}
 
 # Load pretrained MobileNetV2
 weights = MobileNet_V2_Weights.DEFAULT
@@ -85,7 +99,7 @@ def compute_similarity(req: MatchRequest):
         if norm_c == 0:
             continue
         score = np.dot(source_normed, c_emb / norm_c)
-        if score >= 0.85:
+        if score >= 0.75:
             results.append({"id": cand.id, "score": float(score)})
     
     # Sort descending
