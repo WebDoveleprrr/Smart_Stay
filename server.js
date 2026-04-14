@@ -11,6 +11,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const AI_URL = process.env.AI_URL || "http://127.0.0.1:8000";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -559,20 +560,22 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
       let embedding = [];
       const base64Data = req.file ? req.file.buffer.toString("base64") : null;
       if (base64Data) {
+        embedding = null;
+
         try {
-          console.log("Calling AI embed...");
-          const aiRes = await fetch('http://127.0.0.1:8000/embed', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          const aiRes = await fetch(AI_URL + "/embed", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ image_base64: base64Data }),
-            signal: AbortSignal.timeout(2000)
+            signal: AbortSignal.timeout(5000)
           });
+
           if (aiRes.ok) {
             const data = await aiRes.json();
-            embedding = data.embedding || [];
+            embedding = data.embedding;
           }
         } catch (err) {
-          console.log("AI unavailable, skipping matching");
+          console.log("AI unavailable:", err.message);
         }
       }
 
@@ -593,7 +596,7 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
       let matches = [];
 
       try {
-        const matchRes = await fetch("http://127.0.0.1:8000/similarity", {
+        const matchRes = await fetch(AI_URL + "/similarity", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -688,7 +691,7 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
 
       try {
         console.log("Calling AI similarity...");
-        const aiRes = await fetch('http://127.0.0.1:8000/similarity', {
+        const aiRes = await fetch(AI_URL + "/similarity", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(reqBody),
@@ -811,7 +814,7 @@ app.patch('/api/lost-found/:id', requireAuth, async (req, res) => {
     } else {
       await LostFound.findOneAndUpdate({ _id: req.params.id, user_id: req.session.userId }, { status });
     }
-    res.json({ success: true, matches });
+    res.json({ success: true });
   } catch (err) { res.status(500).json({ error: 'Update failed.' }); }
 });
 
