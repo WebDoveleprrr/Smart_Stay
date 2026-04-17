@@ -445,6 +445,7 @@ app.get('/api/profile', requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId).select('-password_hash -otp -otp_expires');
     if (!user) return res.status(404).json({ error: 'User not found.' });
+    if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
     res.json({ user: { id: user._id, name: user.name, email: user.email, room: user.room, block: user.block, phone: user.phone, role: user.role, created_at: user.created_at, rating: user.rating, totalBookings: user.totalBookings, cancelledBookings: user.cancelledBookings, noShows: user.noShows, isBlocked: user.isBlocked } });
   } catch (err) { res.status(500).json({ error: 'Error fetching profile.' }); }
 });
@@ -532,6 +533,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
     if (!user) return res.status(404).json({ error: 'User not found.' });
+    if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
     if (user.isBlocked) return res.status(403).json({ error: 'Booking disabled due to low reliability score' });
 
     const existing = await Booking.findOne({ facility, date, time_slot, status: 'Confirmed' });
@@ -577,6 +579,7 @@ app.get('/api/bookings', requireAuth, async (req, res) => {
       users.forEach(u => { userMap[u._id] = u; });
       bookings = bks.map(b => {
         const u = userMap[b.user_id];
+        if (u && u.rating === undefined) { u.rating = 5.0; u.totalBookings = 0; u.cancelledBookings = 0; u.noShows = 0; u.isBlocked = false; }
         return {
           ...b,
           id: b._id,
@@ -611,6 +614,7 @@ app.delete('/api/bookings/:id', requireAuth, async (req, res) => {
 
     const user = await User.findById(booking.user_id);
     if (user) {
+      if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
       user.cancelledBookings = (user.cancelledBookings || 0) + 1;
       user.rating -= 0.5;
       if (user.rating < 0) user.rating = 0;
@@ -633,6 +637,7 @@ app.patch('/api/bookings/:id/usage', requireAuth, async (req, res) => {
 
     const user = await User.findById(booking.user_id);
     if (user) {
+      if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
       user.rating += 0.2;
       if (user.rating > 5) user.rating = 5.0;
       await user.save();
@@ -647,6 +652,7 @@ app.patch('/api/admin/users/:id/unblock', requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: 'User not found.' });
+    if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
     
     user.isBlocked = false;
     user.rating = 3.5;
@@ -1003,6 +1009,7 @@ setInterval(async () => {
 
           const user = await User.findById(bk.user_id);
           if (user) {
+            if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
             user.noShows = (user.noShows || 0) + 1;
             user.rating -= 1.0;
             if (user.rating < 0) user.rating = 0;
