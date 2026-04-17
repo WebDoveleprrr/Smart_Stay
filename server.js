@@ -380,6 +380,15 @@ app.post('/api/verify-otp', async (req, res) => {
   try {
     const user = await User.findById(req.session.pendingUserId);
     if (!user) return res.status(500).json({ error: 'Session error.' });
+    
+    if (user.rating === undefined) {
+        user.rating = 5.0;
+        user.totalBookings = 0;
+        user.cancelledBookings = 0;
+        user.noShows = 0;
+        user.isBlocked = false;
+        await user.save();
+    }
     // ✅ FIRST check expiry
     if (!user.otp_expires || Date.now() > user.otp_expires) {
       return res.status(401).json({ error: 'OTP expired. Login again.' });
