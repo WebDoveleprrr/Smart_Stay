@@ -327,6 +327,16 @@ app.post('/api/login', async (req, res) => {
     const cleanEmail = email.toLowerCase().trim();
     const user = await User.findOne({ email: new RegExp('^' + cleanEmail + '$', 'i') });
     if (!user) return res.status(401).json({ error: 'Invalid email or password.' });
+
+    if (user.rating === undefined) {
+        user.rating = 5.0;
+        user.totalBookings = 0;
+        user.cancelledBookings = 0;
+        user.noShows = 0;
+        user.isBlocked = false;
+        await user.save();
+    }
+
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(401).json({ error: 'Invalid email or password.' });
 

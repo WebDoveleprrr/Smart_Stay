@@ -1340,16 +1340,24 @@
       <td>${b.facility}</td>
       <td>${b.date}</td>
       <td>${b.time_slot}</td>
-      <td><span class="badge confirmed">${b.status}</span></td>
-      <td><button class="btn-danger" onclick="cancelBooking('${b.id}')">Cancel</button></td>
+      <td><span class="badge ${b.status === 'Cancelled' ? 'urgent' : (b.status === 'Confirmed' ? 'confirmed' : 'progress')}">${b.status}</span></td>
+      <td>
+        ${b.status !== 'Cancelled' ? `<button class="btn-danger" onclick="cancelBooking('${b.id}')">Cancel</button>` : `<button class="btn-danger" disabled style="opacity:0.5;cursor:not-allowed">Cancelled</button>`}
+      </td>
     </tr>`).join('')
         : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">No bookings yet</td></tr>';
     }
 
-    async function cancelBooking(id) {
+    function cancelBooking(id) {
       if (!confirm('Cancel this booking?')) return;
-      await fetch(`https://smart-stay-0gxx.onrender.com/api/bookings/${id}`, { method: 'DELETE', credentials: 'include' });
-      loadBookings(); loadOverview();
+      fetch(`https://smart-stay-0gxx.onrender.com/api/bookings/${id}`, { method: 'DELETE', credentials: 'include' })
+      .then(res => res.json())
+      .then(() => {
+          loadBookings();
+          loadOverview();
+          loadUserReliability();
+      })
+      .catch(err => console.error(err));
     }
 
     function previewLF(e) {
