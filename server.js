@@ -443,11 +443,23 @@ app.get('/api/session', (req, res) => {
 
 app.get('/api/profile', requireAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.session.userId).select('-password_hash -otp -otp_expires');
+    const user = await User.findById(req.session.userId);
     if (!user) return res.status(404).json({ error: 'User not found.' });
-    if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
+
+    if (user.rating === undefined) {
+      user.rating = 5.0;
+      user.totalBookings = 0;
+      user.cancelledBookings = 0;
+      user.noShows = 0;
+      user.isBlocked = false;
+      await user.save();
+    }
+
     res.json({ user: { id: user._id, name: user.name, email: user.email, room: user.room, block: user.block, phone: user.phone, role: user.role, created_at: user.created_at, rating: user.rating, totalBookings: user.totalBookings, cancelledBookings: user.cancelledBookings, noShows: user.noShows, isBlocked: user.isBlocked } });
-  } catch (err) { res.status(500).json({ error: 'Error fetching profile.' }); }
+  } catch (err) { 
+    console.error(err);
+    res.status(500).json({ error: 'Server error' }); 
+  }
 });
 
 // ════════════════════════════════════════════════════════════════════
