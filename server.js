@@ -190,6 +190,11 @@ const userSchema = new mongoose.Schema({
   otp: { type: String, default: null },
   otp_expires: { type: Number, default: null },
   role: { type: String, default: 'student', enum: ['student', 'admin'] },
+  rating: { type: Number, default: 5.0, min: 0, max: 5 },
+  totalBookings: { type: Number, default: 0 },
+  cancelledBookings: { type: Number, default: 0 },
+  noShows: { type: Number, default: 0 },
+  isBlocked: { type: Boolean, default: false },
   created_at: { type: Number, default: () => Math.floor(Date.now() / 1000) }
 });
 const User = mongoose.model('User', userSchema);
@@ -214,7 +219,7 @@ const bookingSchema = new mongoose.Schema({
   facility: { type: String, required: true },
   date: { type: String, required: true },
   time_slot: { type: String, required: true },
-  status: { type: String, default: 'Confirmed' },
+  status: { type: String, default: 'Confirmed', enum: ['Confirmed', 'Cancelled', 'Used', 'No-Show'] },
   created_at: { type: Number, default: () => Math.floor(Date.now() / 1000) }
 });
 const Booking = mongoose.model('Booking', bookingSchema);
@@ -440,7 +445,7 @@ app.get('/api/profile', requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId).select('-password_hash -otp -otp_expires');
     if (!user) return res.status(404).json({ error: 'User not found.' });
-    res.json({ user: { id: user._id, name: user.name, email: user.email, room: user.room, block: user.block, phone: user.phone, role: user.role, created_at: user.created_at } });
+    res.json({ user: { id: user._id, name: user.name, email: user.email, room: user.room, block: user.block, phone: user.phone, role: user.role, created_at: user.created_at, rating: user.rating, totalBookings: user.totalBookings, cancelledBookings: user.cancelledBookings, noShows: user.noShows, isBlocked: user.isBlocked } });
   } catch (err) { res.status(500).json({ error: 'Error fetching profile.' }); }
 });
 
@@ -525,12 +530,16 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
   const { facility, date, time_slot } = req.body;
   if (!facility || !date || !time_slot) return res.status(400).json({ error: 'All fields required.' });
   try {
+    const user = await User.findById(req.session.userId);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    if (user.isBlocked) return res.status(403).json({ error: 'Booking disabled due to low reliability score' });
+
     const existing = await Booking.findOne({ facility, date, time_slot, status: 'Confirmed' });
     if (existing) return res.status(409).json({ error: 'This slot is already booked. Choose another time.' });
 
     const booking = await Booking.create({ user_id: req.session.userId, facility, date, time_slot });
-
-    const user = await User.findById(req.session.userId);
+    user.totalBookings = (user.totalBookings || 0) + 1;
+    await user.save();
     if (user?.email) {
       sendMail(user.email, "Booking Confirmed",
         `Hello ${user.name},
@@ -566,7 +575,19 @@ app.get('/api/bookings', requireAuth, async (req, res) => {
       const users = await User.find({ _id: { $in: userIds } }).lean();
       const userMap = {};
       users.forEach(u => { userMap[u._id] = u; });
-      bookings = bks.map(b => ({ ...b, id: b._id, user_name: userMap[b.user_id]?.name || '—' }));
+      bookings = bks.map(b => {
+        const u = userMap[b.user_id];
+        return {
+          ...b,
+          id: b._id,
+          user_name: u?.name || '—',
+          user_rating: u?.rating,
+          user_totalBookings: u?.totalBookings,
+          user_cancelledBookings: u?.cancelledBookings,
+          user_noShows: u?.noShows,
+          user_isBlocked: u?.isBlocked
+        };
+      });
     } else {
       const bks = await Booking.find({ user_id: req.session.userId }).sort({ date: -1 }).lean();
       bookings = bks.map(b => ({ ...b, id: b._id }));
@@ -577,13 +598,61 @@ app.get('/api/bookings', requireAuth, async (req, res) => {
 
 app.delete('/api/bookings/:id', requireAuth, async (req, res) => {
   try {
+    let booking;
     if (req.session.userRole === 'admin') {
-      await Booking.findByIdAndDelete(req.params.id);
+      booking = await Booking.findById(req.params.id);
     } else {
-      await Booking.findOneAndDelete({ _id: req.params.id, user_id: req.session.userId });
+      booking = await Booking.findOne({ _id: req.params.id, user_id: req.session.userId });
+    }
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+
+    booking.status = 'Cancelled';
+    await booking.save();
+
+    const user = await User.findById(booking.user_id);
+    if (user) {
+      user.cancelledBookings = (user.cancelledBookings || 0) + 1;
+      user.rating -= 0.5;
+      if (user.rating < 0) user.rating = 0;
+      if (user.rating < 3.0) user.isBlocked = true;
+      await user.save();
     }
     res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: 'Delete failed.' }); }
+  } catch (err) { res.status(500).json({ error: 'Cancel failed.' }); }
+});
+
+// MARK AS USED
+app.patch('/api/bookings/:id/usage', requireAuth, async (req, res) => {
+  if (req.session.userRole !== 'admin') return res.status(403).json({ error: 'Admin only.' });
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    
+    booking.status = 'Used';
+    await booking.save();
+
+    const user = await User.findById(booking.user_id);
+    if (user) {
+      user.rating += 0.2;
+      if (user.rating > 5) user.rating = 5.0;
+      await user.save();
+    }
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: 'Usage update failed.' }); }
+});
+
+// ADMIN UNBLOCK
+app.patch('/api/admin/users/:id/unblock', requireAuth, async (req, res) => {
+  if (req.session.userRole !== 'admin') return res.status(403).json({ error: 'Admin only.' });
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    
+    user.isBlocked = false;
+    user.rating = 3.5;
+    await user.save();
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: 'Unblock failed.' }); }
 });
 
 // ════════════════════════════════════════════════════════════════════
@@ -905,6 +974,48 @@ app.get('/api/admin/stats', requireAuth, async (req, res) => {
     res.json({ stats: { students, totalRequests, pendingRequests, totalBookings, openLostFound } });
   } catch (err) { res.status(500).json({ error: 'Stats error.' }); }
 });
+
+// ════════════════════════════════════════════════════════════════════
+// BACKGROUND JOBS
+// ════════════════════════════════════════════════════════════════════
+
+setInterval(async () => {
+  try {
+    const confirmedBookings = await Booking.find({ status: 'Confirmed' });
+    const now = new Date();
+
+    for (const bk of confirmedBookings) {
+      if (!bk.time_slot || !bk.date) continue;
+      // time_slot format e.g., "09:00 AM - 10:00 AM"
+      const timeParts = bk.time_slot.split('-');
+      if (timeParts.length < 2) continue;
+      const endTimeStr = timeParts[1].trim(); 
+      // Parse endTimeStr + bk.date into Date
+      const dateStr = bk.date; // "yyyy-mm-dd"
+      const dt = new Date(`${dateStr} ${endTimeStr}`);
+
+      // If valid date and current time > end time + 15 mins
+      if (!isNaN(dt.getTime())) {
+        const threshold = new Date(dt.getTime() + 15 * 60 * 1000);
+        if (now > threshold) {
+          bk.status = 'No-Show';
+          await bk.save();
+
+          const user = await User.findById(bk.user_id);
+          if (user) {
+            user.noShows = (user.noShows || 0) + 1;
+            user.rating -= 1.0;
+            if (user.rating < 0) user.rating = 0;
+            if (user.rating < 3.0) user.isBlocked = true;
+            await user.save();
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("No-Show Cron Error:", err);
+  }
+}, 15 * 60 * 1000); // Run every 15 minutes
 
 // ── Auto-open browser & Start ─────────────────────────────────────
 app.listen(PORT, () => {

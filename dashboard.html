@@ -1191,7 +1191,7 @@
       if (!d.loggedIn) return window.location.href = '/';
       document.getElementById('sidebarName').textContent = d.name;
       document.getElementById('avatarInit').textContent = d.name.charAt(0).toUpperCase();
-      loadOverview(); loadServices(); loadBookings(); loadLF();
+      loadOverview(); loadServices(); loadBookings(); loadLF(); loadUserReliability();
       document.getElementById('facDate').min = new Date().toISOString().split('T')[0];
       document.getElementById('caseNum').textContent = String(Math.floor(Math.random() * 9000) + 1000);
       document.getElementById('caseDate').textContent = new Date().toLocaleDateString('en-GB');
@@ -1199,6 +1199,25 @@
 
     const pageIcons = { overview: '🏠', services: '🔧', facilities: '🏋️', lostfound: '🔍', profile: '👤' };
     const pageTitles = { overview: 'Overview', services: 'Service Requests', facilities: 'Facility Booking', lostfound: 'Lost & Found Bureau', profile: 'My Profile' };
+
+    async function loadUserReliability() {
+      try {
+        const d = await fetch('https://smart-stay-0gxx.onrender.com/api/profile', { credentials: 'include' }).then(r => r.json());
+        if (d.user) {
+          const u = d.user;
+          const facMsg = document.getElementById('facMsg');
+          if (u.isBlocked) {
+            facMsg.className = 'msg error show';
+            facMsg.textContent = 'Booking disabled due to low reliability score.';
+            const btn = document.querySelector('#page-facilities .btn');
+            if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.style.cursor = 'not-allowed'; }
+          } else if (u.rating < 3.5) {
+            facMsg.className = 'msg error show';
+            facMsg.textContent = \`Warning: Your reliability score is low (\${(u.rating||5).toFixed(1)}/5.0).\`;
+          }
+        }
+      } catch (err) { console.error('Reliability load error', err); }
+    }
 
     function showPage(id, btn) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1506,7 +1525,7 @@
       <div><div style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--cream)">${u.name}</div><div style="color:var(--amber);font-size:0.78rem;font-weight:700">${u.role}</div></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px;">
-      ${[['📧', 'Email', u.email], ['🏢', 'Block', u.block || '—'], ['🚪', 'Room', u.room || '—'], ['📱', 'Phone', u.phone || '—'], ['📅', 'Joined', new Date(u.created_at * 1000).toLocaleDateString()]].map(([i, l, v]) => `
+      ${[['📧', 'Email', u.email], ['🏢', 'Block', u.block || '—'], ['🚪', 'Room', u.room || '—'], ['📱', 'Phone', u.phone || '—'], ['📅', 'Joined', new Date(u.created_at * 1000).toLocaleDateString()], ['⭐', 'Reliability Rating', (u.rating !== undefined ? u.rating.toFixed(1) : '5.0') + '/5.0'], ['🚫', 'No-Shows', u.noShows || 0], ['❌', 'Cancellations', u.cancelledBookings || 0]].map(([i, l, v]) => `
       <div style="display:flex;align-items:center;gap:14px;padding:11px;background:var(--surface2);border-radius:9px;border:1px solid var(--border)">
         <span style="font-size:1.1rem">${i}</span>
         <div><div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:700">${l}</div><div style="font-size:0.88rem;margin-top:2px">${v}</div></div>

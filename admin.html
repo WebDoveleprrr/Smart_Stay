@@ -706,10 +706,10 @@
             <table>
               <thead>
                 <tr>
-                  <th>Student</th>
+                  <th>Student Info</th>
+                  <th>Stats (Tot/Can/NS)</th>
                   <th>Facility</th>
-                  <th>Date</th>
-                  <th>Time Slot</th>
+                  <th>Date &nbsp;/&nbsp; Time Slot</th>
                   <th>Status</th>
                   <th>Action</th>
                 </tr>
@@ -855,17 +855,45 @@
       const books = d.bookings || [];
       document.getElementById('adminBookTable').innerHTML = books.length
         ? books.map(b => `<tr>
-      <td style="font-weight:600">${b.user_name || '—'}</td>
-      <td>${b.facility}</td><td>${b.date}</td><td>${b.time_slot}</td>
-      <td><span class="badge confirmed">${b.status}</span></td>
-      <td><button class="cancel-btn" onclick="cancelBook('${b.id}')">Cancel</button></td>
+      <td>
+        <div style="font-weight:600">${b.user_name || '—'}</div>
+        <div style="font-size:0.75rem; color:${b.user_isBlocked ? 'var(--error)' : 'var(--muted)'}">
+          ⭐ ${b.user_rating !== undefined ? b.user_rating.toFixed(1) : '5.0'} / 5.0
+          ${b.user_isBlocked ? ' (BLOCKED)' : ''}
+        </div>
+      </td>
+      <td style="font-size:0.8rem; color:var(--muted);">
+        Tot: ${b.user_totalBookings || 0} <br/> 
+        Can: ${b.user_cancelledBookings || 0} <br/> 
+        NS: ${b.user_noShows || 0}
+      </td>
+      <td>${b.facility}</td>
+      <td style="font-size:0.85rem">${b.date}<br/>${b.time_slot}</td>
+      <td><span class="badge ${b.status==='Confirmed'?'confirmed':b.status==='Cancelled'?'urgent':b.status==='No-Show'?'high':'resolved'}">${b.status}</span></td>
+      <td style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${b.status === 'Confirmed' ? `<button class="cancel-btn" onclick="cancelBook('${b.id}')">Cancel</button>` : ''}
+        ${b.status === 'Confirmed' ? `<button class="cancel-btn" style="background:var(--success);" onclick="markUsed('${b.id}')">Mark Used</button>` : ''}
+        ${b.user_isBlocked ? `<button class="cancel-btn" style="background:var(--amber);" onclick="unblockUser('${b.user_owner_id || b.user_id}')">Unblock User</button>` : ''}
+      </td>
       </tr>`).join('')
-        : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">No bookings</td></tr>';
+        : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">No bookings found</td></tr>';
     }
 
     async function cancelBook(id) {
       if (!confirm('Cancel this booking?')) return;
       await fetch(`https://smart-stay-0gxx.onrender.com/api/bookings/${id}`, { method: 'DELETE', credentials: 'include' });
+      loadAdminBookings(); loadStats();
+    }
+
+    async function markUsed(id) {
+      if (!confirm('Mark this booking as used?')) return;
+      await fetch(`https://smart-stay-0gxx.onrender.com/api/bookings/${id}/usage`, { method: 'PATCH', credentials: 'include' });
+      loadAdminBookings(); loadStats();
+    }
+
+    async function unblockUser(userId) {
+      if (!confirm('Unblock this user and reset their rating?')) return;
+      await fetch(`https://smart-stay-0gxx.onrender.com/api/admin/users/${userId}/unblock`, { method: 'PATCH', credentials: 'include' });
       loadAdminBookings(); loadStats();
     }
 
