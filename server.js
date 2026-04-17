@@ -531,6 +531,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
   const { facility, date, time_slot } = req.body;
   if (!facility || !date || !time_slot) return res.status(400).json({ error: 'All fields required.' });
   try {
+    console.log("Booking route hit");
     const user = await User.findById(req.session.userId);
     if (!user) return res.status(404).json({ error: 'User not found.' });
     if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
@@ -541,7 +542,9 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
 
     const booking = await Booking.create({ user_id: req.session.userId, facility, date, time_slot });
     user.totalBookings = (user.totalBookings || 0) + 1;
+    console.log("Before save:", user);
     await user.save();
+    console.log("Saved user:", user);
     if (user?.email) {
       sendMail(user.email, "Booking Confirmed",
         `Hello ${user.name},
@@ -601,6 +604,7 @@ app.get('/api/bookings', requireAuth, async (req, res) => {
 
 app.delete('/api/bookings/:id', requireAuth, async (req, res) => {
   try {
+    console.log("Cancel route hit");
     let booking;
     if (req.session.userRole === 'admin') {
       booking = await Booking.findById(req.params.id);
@@ -619,7 +623,9 @@ app.delete('/api/bookings/:id', requireAuth, async (req, res) => {
       user.rating -= 0.5;
       if (user.rating < 0) user.rating = 0;
       if (user.rating < 3.0) user.isBlocked = true;
+      console.log("Before save:", user);
       await user.save();
+      console.log("Saved user:", user);
     }
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: 'Cancel failed.' }); }
