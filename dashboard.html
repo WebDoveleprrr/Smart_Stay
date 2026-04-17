@@ -875,7 +875,7 @@
 
 <body>
   <header class="global-header">
-    <div class="header-branding" onclick="window.location.href='dashboard.html'" style="cursor:pointer; display:flex; align-items:center; gap:10px;" title="Overview">
+    <div class="header-branding" onclick="window.location.href='/dashboard.html'" style="cursor:pointer; display:flex; align-items:center; gap:10px;" title="Overview">
       <div class="logo-icon" style="width:32px; height:32px; font-size:1.1rem; border-radius:8px;">🏨</div>
       <div class="global-logo">Smart<span>Stay</span></div>
     </div>
@@ -1189,7 +1189,7 @@
     const catIcons = { Electrician: '⚡', Plumber: '🔩', Cleaning: '🧹', Laundry: '👕', Carpenter: '🪚', Other: '⚙️' };
 
     fetch('https://smart-stay-0gxx.onrender.com/api/session', { credentials: 'include' }).then(r => r.json()).then(d => {
-      if (!d.loggedIn) return window.location.href = '/';
+      if (!d.loggedIn) return window.location.href = '/login.html';
       document.getElementById('sidebarName').textContent = d.name;
       document.getElementById('avatarInit').textContent = d.name.charAt(0).toUpperCase();
       loadOverview(); loadServices(); loadBookings(); loadLF(); loadUserReliability();
@@ -1342,7 +1342,7 @@
       <td>${b.time_slot}</td>
       <td><span class="badge ${b.status === 'Cancelled' ? 'urgent' : (b.status === 'Confirmed' ? 'confirmed' : 'progress')}">${b.status}</span></td>
       <td>
-        ${b.status !== 'Cancelled' ? `<button class="btn-danger" onclick="cancelBooking('${b.id}')">Cancel</button>` : `<button class="btn-danger" disabled style="opacity:0.5;cursor:not-allowed">Cancelled</button>`}
+        ${b.status !== 'Cancelled' ? `<button class="btn-danger" onclick="cancelBooking('${b.id}')">Cancel</button>` : ''}
       </td>
     </tr>`).join('')
         : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">No bookings yet</td></tr>';
@@ -1504,7 +1504,7 @@
       document.getElementById('lfGrid').innerHTML = items.map((i, idx) => `
     <div class="pin-card">
       <div class="image-box">
-        ${i.image ? `<img src="${i.image ? `data:${i.image.contentType};base64,${i.image.data}` : 'https://via.placeholder.com/300x200?text=No+Image'}" alt=""/>` : (i.type === 'Lost' ? '🔍' : '📦')}
+        ${i.image ? `<img src="${typeof i.image === 'string' ? i.image : `data:${i.image.contentType};base64,${i.image.data}`}" alt=""/>` : (i.type === 'Lost' ? '🔍' : '📦')}
       </div>
       <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
         <div style="font-size:1.1rem; font-weight:700; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;" title="${i.item_name}">${i.item_name}</div>
@@ -1555,7 +1555,7 @@
       showPage('overview', document.querySelectorAll('.nav-item')[0]);
     }
     function showMsg(id, text, type) { const e = document.getElementById(id); e.textContent = text; e.className = `msg ${type} show`; }
-    async function doLogout() { await fetch('https://smart-stay-0gxx.onrender.com/api/logout', { method: 'POST', credentials: 'include' }); window.location.href = '/'; }
+    async function doLogout() { await fetch('https://smart-stay-0gxx.onrender.com/api/logout', { method: 'POST', credentials: 'include' }); window.location.href = '/login.html'; }
   </script>
 </body>
 

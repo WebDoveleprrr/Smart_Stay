@@ -15,6 +15,16 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { v2: cloudinary } = require('cloudinary');
+
+// Cloudinary config
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+}
 const AI_URL = process.env.AI_URL || null;
 if (!AI_URL) console.warn('WARNING: AI_URL not set. Image matching will be disabled.');
 
@@ -40,46 +50,24 @@ if (!uri) {
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'bikkinarohitchowdary@gmail.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Rohit@1234';
 
-function sendMail(to, subject, textContent, attachments = [], status = null) {
-  let statusHtml = '';
-  if (status) {
-    statusHtml = `
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 20px; background: #f9fafb; padding: 10px; border-radius: 6px;">
-      <tr>
-        <td style="width: 100px;"><strong>Status:</strong></td>
-        <td style="color:${status === 'Closed' ? 'green' : 'orange'}; font-weight: bold;">
-          ${status}
-        </td>
-      </tr>
-    </table>`;
-  }
+function emailTemplate(title, color, body) {
+  return `
+  <div style="font-family:Arial;background:#f5f5f5;padding:20px;">
+    <div style="max-width:600px;margin:auto;background:white;border-radius:10px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+      
+      <div style="background:${color};color:white;padding:15px;font-size:20px;text-align:center;font-weight:bold;">
+        ${title}
+      </div>
 
-  const htmlContent = `
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px; font-family: 'Inter', Helvetica, Arial, sans-serif;">
-  <tr>
-    <td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <tr>
-          <td style="background: linear-gradient(135deg, #f97316, #10b981, #3b82f6); padding: 24px; text-align: center; color: #ffffff;">
-            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">Smart Stay System</h2>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding: 32px; color: #374151; font-size: 15px; line-height: 1.6;">
-            ${textContent.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}
-            ${statusHtml}
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 13px; color: #64748b; border-top: 1px solid #e2e8f0;">
-            This is an automated email from Smart Stay.<br>Please do not reply.
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>`;
+      <div style="padding:20px;color:#333;font-size:15px;line-height:1.6;">
+        ${body}
+      </div>
 
+    </div>
+  </div>`;
+}
+
+function sendEmail(to, subject, htmlContent, attachments = []) {
   const msg = {
     to,
     from: {
@@ -87,7 +75,7 @@ function sendMail(to, subject, textContent, attachments = [], status = null) {
       email: process.env.EMAIL_USER || "brohitchowdary5@gmail.com"
     },
     subject,
-    text: textContent + '\n\nThis is an automated email from Smart Stay',
+    text: subject + '\n\nThis is an automated email from Smart Stay',
     html: htmlContent,
     trackingSettings: {
       clickTracking: { enable: false, enableText: false },
@@ -162,7 +150,15 @@ mongoose.connect(uri)
   });
 
 // ── File Uploads ──────────────────────────────────────────────────
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/')
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
+  }
+});
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -231,7 +227,7 @@ const lostFoundSchema = new mongoose.Schema({
   item_name: { type: String, required: true },
   description: { type: String, default: '' },
   location: { type: String, default: '' },
-  image: { data: String, contentType: String },
+  image: { type: mongoose.Schema.Types.Mixed },
   embedding: { type: [Number], default: [] },
   status: { type: String, default: 'Open', enum: ['Open', 'Closed'] },
   matched_id: { type: String, default: null },
@@ -292,24 +288,17 @@ app.post('/api/register', async (req, res) => {
     });
 
     // Send registration confirmation email
-    sendMail(user.email, "Welcome to Smart Stay",
-      `Hello ${user.name},
+    sendEmail(user.email, "Welcome to Smart Stay", emailTemplate(
+      "Welcome to Smart Stay",
+      "#2F5D8C",
+      `Hello ${user.name},<br><br>Your account has been created successfully.<br>You can now login.<br><br>- Smart Stay`
+    ));
 
-Your account has been created successfully.
-You can now login.
-
-- Smart Stay`);
-
-    sendMail(ADMIN_EMAIL, "New User Registered",
-      `New user registered:
-
-Name: ${user.name}
-Email: ${user.email}
-Block: ${user.block}
-Room: ${user.room}
-Phone: ${user.phone}
-
-- Smart Stay`);
+    sendEmail(ADMIN_EMAIL, "New User Registered", emailTemplate(
+      "New User Registered",
+      "#2F5D8C",
+      `New user registered:<br><br>Name: ${user.name}<br>Email: ${user.email}<br>Block: ${user.block}<br>Room: ${user.room}<br>Phone: ${user.phone}<br><br>- Smart Stay`
+    ));
 
     res.json({ success: true, message: 'Account created! A confirmation email has been sent. Please login.' });
   } catch (err) {
@@ -363,8 +352,10 @@ app.post('/api/login', async (req, res) => {
         console.error('Session save error:', err);
         return res.status(500).json({ error: 'Session error. Please try again.' });
       }
-      sendMail(user.email, "Smart Stay Login Code",
-        `Hello ${user.name || 'User'},\n\nYour login code is: ${otp}\n\nValid for 5 minutes.\nIf not you, ignore.\n\n- Smart Stay`);
+      sendEmail(user.email, "Smart Stay Login Code", emailTemplate(
+        "Login Verification Code", "#2F5D8C",
+        `Hello ${user.name || 'User'},<br><br>Your login code is: <b>${otp}</b><br><br>Valid for 5 minutes.<br>If not you, ignore.<br><br>- Smart Stay`
+      ));
       console.log(`\nOTP for ${user.email}: ${otp}\n`);
       res.json({ success: true, message: 'OTP sent to your registered email! Check your inbox.' });
     }); // prevent double response
@@ -428,18 +419,10 @@ app.post('/api/resend-otp', async (req, res) => {
     await User.findByIdAndUpdate(user._id, { otp: newOtp, otp_expires: newExpires });
     user.otp = newOtp; // for email below
 
-    sendMail(user.email, "Smart Stay Login Verification Code",
-      `Hello ${user.name || 'User'},
-
-You requested a new login code.
-
-Verification Code:
-${user.otp}
-
-This code is valid for 5 minutes.
-If this was not you, please ignore.
-
-- Smart Stay`);
+    sendEmail(user.email, "Smart Stay Login Verification Code", emailTemplate(
+      "Login Verification Code", "#2F5D8C",
+      `Hello ${user.name || 'User'},<br><br>You requested a new login code.<br><br>Verification Code:<br><b>${user.otp}</b><br><br>This code is valid for 5 minutes.<br>If this was not you, please ignore.<br><br>- Smart Stay`
+    ));
 
     res.json({ success: true });
   } catch (err) {
@@ -500,27 +483,15 @@ app.post('/api/services', requireAuth, async (req, res) => {
     });
 
     if (user?.email) {
-      sendMail(user.email, "Service Request Received",
-        `Hello ${user.name},
+      sendEmail(user.email, "Service Request Received", emailTemplate(
+        "Service Request Received", "#f39c12",
+        `Hello ${user.name},<br><br>Your service request has been submitted.<br><br>Category: ${category}<br>Description: ${description}<br>Priority: ${priority}<br><br>We will resolve it soon.<br><br>- Smart Stay`
+      ));
 
-Your service request has been submitted.
-
-Category: ${category}
-Description: ${description}
-Priority: ${priority}
-
-We will resolve it soon.
-
-- Smart Stay`);
-
-      sendMail(ADMIN_EMAIL, "New Service Request",
-        `User: ${user.name}
-Email: ${user.email}
-Category: ${category}
-Priority: ${priority}
-Description: ${description}
-
-- Smart Stay`);
+      sendEmail(ADMIN_EMAIL, "New Service Request", emailTemplate(
+        "New Service Request", "#f39c12",
+        `User: ${user.name}<br>Email: ${user.email}<br>Category: ${category}<br>Priority: ${priority}<br>Description: ${description}<br><br>- Smart Stay`
+      ));
     }
     res.json({ success: true, message: 'Service request submitted! Confirmation email sent.', id: svc._id });
   } catch (err) { res.status(500).json({ error: 'Failed to submit.' }); }
@@ -549,7 +520,21 @@ app.patch('/api/services/:id', requireAuth, async (req, res) => {
   if (req.session.userRole !== 'admin') return res.status(403).json({ error: 'Admin only.' });
   const { status } = req.body;
   try {
-    await ServiceRequest.findByIdAndUpdate(req.params.id, { status, updated_at: Math.floor(Date.now() / 1000) });
+    const updatedService = await ServiceRequest.findByIdAndUpdate(req.params.id, { status, updated_at: Math.floor(Date.now() / 1000) }, { new: true });
+    
+    // notify user
+    if (updatedService) {
+      const user = await User.findById(updatedService.user_id);
+      if (user && user.email) {
+        sendEmail(user.email, "Service Update", emailTemplate(
+          "Service Request Updated", "#f39c12",
+          `<table border="1" cellpadding="10" style="border-collapse:collapse;width:100%;text-align:left;">
+            <tr><td><strong>Status</strong></td><td>${status}</td></tr>
+            <tr><td><strong>Category</strong></td><td>${updatedService.category}</td></tr>
+          </table>`
+        ));
+      }
+    }
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: 'Update failed.' }); }
 });
@@ -577,25 +562,15 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     await user.save();
     console.log("Saved user:", user);
     if (user?.email) {
-      sendMail(user.email, "Booking Confirmed",
-        `Hello ${user.name},
+      sendEmail(user.email, "Booking Confirmed", emailTemplate(
+        "Booking Confirmed", "#10b981",
+        `Hello ${user.name},<br><br>Your booking has been confirmed.<br><br>Facility: ${facility}<br>Date: ${date}<br>Time: ${time_slot}<br><br>- Smart Stay`
+      ));
 
-Your booking has been confirmed.
-
-Facility: ${facility}
-Date: ${date}
-Time: ${time_slot}
-
-- Smart Stay`);
-
-      sendMail(ADMIN_EMAIL, "New Booking",
-        `User: ${user.name}
-Email: ${user.email}
-Facility: ${facility}
-Date: ${date}
-Time: ${time_slot}
-
-- Smart Stay`);
+      sendEmail(ADMIN_EMAIL, "New Booking", emailTemplate(
+        "New Booking", "#10b981",
+        `User: ${user.name}<br>Email: ${user.email}<br>Facility: ${facility}<br>Date: ${date}<br>Time: ${time_slot}<br><br>- Smart Stay`
+      ));
     }
     res.json({ success: true, message: `${facility} booked for ${date} at ${time_slot}! Confirmation sent.`, id: booking._id });
   } catch (err) { res.status(500).json({ error: 'Booking failed.' }); }
@@ -649,14 +624,22 @@ app.delete('/api/bookings/:id', requireAuth, async (req, res) => {
 
     const user = await User.findById(booking.user_id);
     if (user) {
-      if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
-      user.cancelledBookings = (user.cancelledBookings || 0) + 1;
-      user.rating -= 0.5;
-      if (user.rating < 0) user.rating = 0;
-      if (user.rating < 3.0) user.isBlocked = true;
-      console.log("Before save:", user);
-      await user.save();
-      console.log("Saved user:", user);
+      if (user.role === 'admin') {
+        // do nothing for admin
+      } else {
+        if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
+        user.cancelledBookings = (user.cancelledBookings || 0) + 1;
+        user.rating -= 0.5;
+        if (user.rating < 0) user.rating = 0;
+        if (user.rating < 3.0) user.isBlocked = true;
+        await user.save();
+      }
+    }
+    if (user?.email) {
+      sendEmail(user.email, "Booking Cancelled", emailTemplate(
+        "Booking Cancelled", "#ef4444",
+        `Your booking for ${booking.facility} on ${booking.date} at ${booking.time_slot} has been cancelled.`
+      ));
     }
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: 'Cancel failed.' }); }
@@ -673,7 +656,7 @@ app.patch('/api/bookings/:id/usage', requireAuth, async (req, res) => {
     await booking.save();
 
     const user = await User.findById(booking.user_id);
-    if (user) {
+    if (user && user.role !== 'admin') {
       if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
       user.rating += 0.2;
       if (user.rating > 5) user.rating = 5.0;
@@ -709,7 +692,7 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
     if (!type || !item_name) return res.status(400).json({ error: 'Type and item name required.' });
     try {
       let embedding = [];
-      const base64Data = req.file ? req.file.buffer.toString('base64') : null;
+      const base64Data = (req.file && req.file.path) ? fs.readFileSync(req.file.path).toString('base64') : null;
       if (base64Data && AI_URL) {
         try {
           const aiRes = await fetch(AI_URL + '/embed', {
@@ -733,9 +716,22 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
         } catch (err) {
           console.error('[EMBED FAILED] Full error:', err.message);
           console.error('[EMBED FAILED] AI_URL was:', AI_URL + '/embed');
-          // embedding stays [] — item saves without embedding, matching disabled
         }
       }
+      
+      let imageUrl = "";
+      if (req.file) {
+        if (process.env.CLOUDINARY_CLOUD_NAME) {
+          try {
+            const result = await cloudinary.uploader.upload(req.file.path);
+            imageUrl = result.secure_url;
+            fs.unlinkSync(req.file.path);
+          } catch(e) { console.error("Cloudinary error:", e); imageUrl = `/uploads/${req.file.filename}`; }
+        } else {
+          imageUrl = `/uploads/${req.file.filename}`;
+        }
+      }
+
       console.log("DEBUG DATA:", {
         type,
         item_name,
@@ -751,10 +747,7 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
         item_name,
         description: description || '',
         location: location || '',
-        image: req.file ? {
-          data: base64Data,
-          contentType: req.file.mimetype
-        } : null,
+        image: imageUrl || null,
         embedding: Array.isArray(embedding) ? embedding : [],
         status: 'Open'
       });
@@ -792,10 +785,13 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
                 const candOwner = await User.findById(candDoc.user_id);
                 if (candOwner?.email) {
                   const scoreStr = (match.score * 100).toFixed(1);
-                  sendMail(
+                  sendEmail(
                     candOwner.email,
                     type === 'Found' ? 'Your lost item may have been found!' : 'Someone reported a found item matching yours',
-                    `Hello ${candOwner.name},\n\nGood news! A new ${type.toLowerCase()} item report was posted that matches your ${candDoc.type.toLowerCase()} item "${candDoc.item_name}" with ${scoreStr}% image similarity.\n\nPlease log in to your dashboard to review the match and confirm if it is your item.\n\n- Smart Stay`
+                    emailTemplate(
+                      "Potential Match Found", "#2F5D8C",
+                      `Hello ${candOwner.name},<br><br>Good news! A new ${type.toLowerCase()} item report was posted that matches your ${candDoc.type.toLowerCase()} item "${candDoc.item_name}" with ${scoreStr}% image similarity.<br><br>Please log in to your dashboard to review the match.<br><br>- Smart Stay`
+                    )
                   );
                 }
               }
@@ -808,11 +804,10 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
       const user = await User.findById(req.session.userId);
       if (user?.email) {
         let attachments = [];
-        if (req.file) {
+        if (base64Data) {
           try {
-            const base64Str = req.file.buffer.toString("base64");
             attachments.push({
-              content: base64Str,
+              content: base64Data,
               filename: req.file.originalname,
               type: req.file.mimetype,
               disposition: "attachment"
@@ -823,28 +818,15 @@ app.post('/api/lost-found', requireAuth, (req, res) => {
         }
 
         const isLost = type === 'Lost';
+        sendEmail(user.email, isLost ? "Lost Item Report Submitted" : "Found Item Submitted", emailTemplate(
+          isLost ? "Lost Item Report" : "Found Item Report", "#2F5D8C",
+          `Hello ${user.name},<br><br>Your ${isLost ? "lost item report" : "found item report"} has been submitted.<br><br>Item: ${item_name}<br>Description: ${description}<br>Location: ${location || "Not specified"}<br><br>- Smart Stay`
+        ), attachments);
 
-        sendMail(user.email, isLost ? "Lost Item Report Submitted" : "Found Item Submitted",
-          `Hello ${user.name},
-
-Your ${isLost ? "lost item report" : "found item report"} has been submitted.
-
-Item: ${item_name}
-Description: ${description}
-Location: ${location || "Not specified"}
-
-- Smart Stay`, attachments, item.status);
-
-        sendMail(ADMIN_EMAIL, "Lost/Found Report",
-          `User: ${user.name}
-Email: ${user.email}
-Type: ${type}
-Item: ${item_name}
-Location: ${location}
-Description: ${description}
-
-- Smart Stay`, attachments, item.status);
-
+        sendEmail(ADMIN_EMAIL, "Lost/Found Report", emailTemplate(
+          "Lost/Found Report", "#2F5D8C",
+          `User: ${user.name}<br>Email: ${user.email}<br>Type: ${type}<br>Item: ${item_name}<br>Location: ${location}<br>Description: ${description}<br><br>- Smart Stay`
+        ), attachments);
       }
       res.json({ success: true, message: 'Report posted!', id: item._id, embeddingGenerated: embedding.length > 0 });
     } catch (err) { res.status(500).json({ error: 'Failed to post.' }); }
@@ -909,14 +891,14 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
             location: candDoc.location,
             type: candDoc.type,
             score: m.score,
-            image_url: candDoc.image ? `data:${candDoc.image.contentType};base64,${candDoc.image.data}` : null,
+            image_url: candDoc.image ? (typeof candDoc.image === 'string' ? candDoc.image : `data:${candDoc.image.contentType};base64,${candDoc.image.data}`) : null,
             user_name: owner?.name,
             user_email: owner?.email
           });
         }
       }
     }
-    const sourceImageUrl = item.image ? `data:${item.image.contentType};base64,${item.image.data}` : null;
+    const sourceImageUrl = item.image ? (typeof item.image === 'string' ? item.image : `data:${item.image.contentType};base64,${item.image.data}`) : null;
     res.json({ matches: matchDetails, source_image_url: sourceImageUrl });
   } catch (err) {
     console.error("Match error:", err);
@@ -943,20 +925,19 @@ app.post('/api/confirm-match', requireAuth, async (req, res) => {
     const sOwner = await User.findById(source.user_id);
     const tOwner = await User.findById(target.user_id);
 
-    // Construct email templates
     const sendMatchEmails = (user, item, matchedItemTitle) => {
       if (!user?.email) return;
       if (item.type === 'Lost') {
-        sendMail(
+        sendEmail(
           user.email,
           "Your lost item has been found",
-          `Hello ${user.name},\n\nGood news! Your lost item '${item.item_name}' has been matched with a found item.\n\nPlease check your dashboard for details.\n\n- Smart Stay`
+          emailTemplate("Match Confirmed", "#10b981", `Hello ${user.name},<br><br>Good news! Your lost item '${item.item_name}' has been matched with a found item.<br><br>Please check your dashboard for details.<br><br>- Smart Stay`)
         );
       } else {
-        sendMail(
+        sendEmail(
           user.email,
           "Match confirmed for found item",
-          `Hello ${user.name},\n\nThe item you reported has been successfully matched with a lost report and the case is now closed.\n\n- Smart Stay`
+          emailTemplate("Match Confirmed", "#10b981", `Hello ${user.name},<br><br>The item you reported has been successfully matched with a lost report and the case is now closed.<br><br>- Smart Stay`)
         );
       }
     };
@@ -1045,7 +1026,7 @@ setInterval(async () => {
           await bk.save();
 
           const user = await User.findById(bk.user_id);
-          if (user) {
+          if (user && user.role !== 'admin') {
             if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
             user.noShows = (user.noShows || 0) + 1;
             user.rating -= 1.0;
@@ -1077,3 +1058,8 @@ app.listen(PORT, () => {
     exec(cmd, () => { });
   }
 });
+
+// KEEP-ALIVE for Render
+setInterval(() => {
+  fetch("https://smart-stay-0gxx.onrender.com").catch(err => console.error("Keep-Alive ping error:", err.message));
+}, 5 * 60 * 1000);

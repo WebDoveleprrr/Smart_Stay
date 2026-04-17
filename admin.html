@@ -564,7 +564,7 @@
 
 <body>
   <header class="global-header">
-    <div class="header-branding" onclick="window.location.href='admin.html'" style="cursor:pointer; display:flex; align-items:center; gap:10px;" title="Overview">
+    <div class="header-branding" onclick="window.location.href='/admin.html'" style="cursor:pointer; display:flex; align-items:center; gap:10px;" title="Overview">
       <div class="logo-icon" style="width:32px; height:32px; font-size:1.1rem; border-radius:8px;">🛡️</div>
       <div class="global-logo">Smart<span>Stay</span></div>
     </div>
@@ -783,7 +783,7 @@
     }
     let allSrv = [];
     fetch('https://smart-stay-0gxx.onrender.com/api/session', { credentials: 'include' }).then(r => r.json()).then(d => {
-      if (!d.loggedIn || d.role !== 'admin') window.location.href = '/';
+      if (!d.loggedIn || d.role !== 'admin') window.location.href = '/login.html';
       else { loadStats(); loadAdminServices(); loadAdminBookings(); loadAdminLF(); }
     });
 
@@ -902,7 +902,7 @@
       const items = d.items || [];
       document.getElementById('adminLFTable').innerHTML = items.length
         ? items.map(i => `<tr>
-      <td>${i.image ? `<img src="${i.image ? `data:${i.image.contentType};base64,${i.image.data}` : ''}" width="50" height="50" style="object-fit:cover;border-radius:6px;" />` : '<span style="font-size:1.4rem">📦</span>'}</td>
+      <td>${i.image ? `<img src="${typeof i.image === 'string' ? i.image : `data:${i.image.contentType};base64,${i.image.data}`}" width="50" height="50" style="object-fit:cover;border-radius:6px;" />` : '<span style="font-size:1.4rem">📦</span>'}</td>
       <td style="font-weight:600">${i.user_name}</td>
       <td><span class="badge ${i.type.toLowerCase()}">${i.type}</span></td>
       <td><div style="font-weight:600">${i.item_name}</div></td>
@@ -998,7 +998,7 @@
     function goHome() {
       showPage('overview', document.querySelectorAll('.nav-item')[0]);
     }
-    async function doLogout() { await fetch('https://smart-stay-0gxx.onrender.com/api/logout', { method: 'POST', credentials: 'include' }); window.location.href = '/'; }
+    async function doLogout() { await fetch('https://smart-stay-0gxx.onrender.com/api/logout', { method: 'POST', credentials: 'include' }); window.location.href = '/login.html'; }
   </script>
 </body>
 
