@@ -41,13 +41,6 @@
   <div class="loading-text">Loading Smart Stay...</div>
 
   <script>
-    // Ping backend to wake it up
-    fetch('https://smart-stay-0gxx.onrender.com/api/session', { credentials: 'include' })
-      .then(response => {
-         // Optionally do check here, but setTimeout handles redirect regardless
-      })
-      .catch(err => console.log('Waking up backend...', err));
-
     setTimeout(() => {
       window.location.href = "/dashboard.html";
     }, 2000);

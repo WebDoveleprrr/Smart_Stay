@@ -49,6 +49,28 @@
       z-index: 1;
     }
 
+    input, select, button {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    input[type="date"] {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .container {
+      overflow-x: hidden;
+      padding: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        flex-direction: column;
+      }
+    }
+
     .global-header {
       width: 100%;
       background: #ffffff;
@@ -1342,7 +1364,7 @@
       <td>${b.time_slot}</td>
       <td><span class="badge ${b.status === 'Cancelled' ? 'urgent' : (b.status === 'Confirmed' ? 'confirmed' : 'progress')}">${b.status}</span></td>
       <td>
-        ${b.status !== 'Cancelled' ? `<button class="btn-danger" onclick="cancelBooking('${b.id}')">Cancel</button>` : ''}
+        ${b.status === 'Confirmed' ? `<button class="btn-danger" onclick="cancelBooking('${b.id}')">Cancel</button>` : ''}
       </td>
     </tr>`).join('')
         : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">No bookings yet</td></tr>';
@@ -1377,14 +1399,14 @@
       if (!item_name) return showMsg('lfMsg', 'Item name required.', 'error');
       
       showMsg('lfMsg', 'Uploading & Finding matches...', 'success');
-      const fd = new FormData();
-      fd.append('type', type); fd.append('item_name', item_name);
-      fd.append('description', document.getElementById('lfDesc').value);
-      fd.append('location', document.getElementById('lfLocation').value);
+      const formData = new FormData();
+      formData.append('type', type); formData.append('item_name', item_name);
+      formData.append('description', document.getElementById('lfDesc').value);
+      formData.append('location', document.getElementById('lfLocation').value);
       const photo = document.getElementById('photoInput').files[0];
-      if (photo) fd.append('image', photo);
+      if (photo) formData.append('image', photo);
       
-      const res = await fetch('https://smart-stay-0gxx.onrender.com/api/lost-found', { method: 'POST', credentials: 'include', body: fd });
+      const res = await fetch('https://smart-stay-0gxx.onrender.com/api/lost-found', { method: 'POST', credentials: 'include', body: formData });
       const d = await res.json();
       if (d.error) return showMsg('lfMsg', d.error, 'error');
       

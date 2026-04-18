@@ -53,13 +53,13 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Rohit@1234';
 function emailTemplate(title, color, body) {
   return `
   <div style="font-family:Arial;background:#f5f5f5;padding:20px;">
-    <div style="max-width:600px;margin:auto;background:white;border-radius:10px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+    <div style="max-width:600px;margin:auto;background:white;border-radius:10px;overflow:hidden;">
       
-      <div style="background:${color};color:white;padding:15px;font-size:20px;text-align:center;font-weight:bold;">
+      <div style="background:${color};color:white;padding:15px;font-size:20px;font-weight:bold;">
         ${title}
       </div>
 
-      <div style="padding:20px;color:#333;font-size:15px;line-height:1.6;">
+      <div style="padding:20px;">
         ${body}
       </div>
 
@@ -67,15 +67,11 @@ function emailTemplate(title, color, body) {
   </div>`;
 }
 
-function sendEmail(to, subject, htmlContent, attachments = []) {
+async function sendEmail(to, subject, htmlContent, attachments = []) {
   const msg = {
     to,
-    from: {
-      name: 'Smart Stay',
-      email: process.env.EMAIL_USER || "brohitchowdary5@gmail.com"
-    },
+    from: process.env.EMAIL_USER || "brohitchowdary5@gmail.com",
     subject,
-    text: subject + '\n\nThis is an automated email from Smart Stay',
     html: htmlContent,
     trackingSettings: {
       clickTracking: { enable: false, enableText: false },
@@ -87,15 +83,17 @@ function sendEmail(to, subject, htmlContent, attachments = []) {
     msg.attachments = attachments;
   }
 
-  setImmediate(() => {
-    if (!process.env.SENDGRID_API_KEY) {
-      console.log(`[MAIL SKIPPED - no key] To: ${to} | Subject: ${subject}`);
-      return;
-    }
-    sgMail.send(msg)
-      .then(() => console.log(`Email sent to ${to}`))
-      .catch(err => console.error("ERROR:", err.response?.body || err.message));
-  });
+  if (!process.env.SENDGRID_API_KEY) {
+    console.log(`[MAIL SKIPPED - no key] To: ${to} | Subject: ${subject}`);
+    return;
+  }
+  
+  try {
+    await sgMail.send(msg);
+    console.log(`Email sent to ${to}`);
+  } catch (err) {
+    console.error("ERROR:", err.response?.body || err.message);
+  }
 }
 
 // ── Middleware ────────────────────────────────────────────────────
@@ -522,17 +520,37 @@ app.patch('/api/services/:id', requireAuth, async (req, res) => {
   try {
     const updatedService = await ServiceRequest.findByIdAndUpdate(req.params.id, { status, updated_at: Math.floor(Date.now() / 1000) }, { new: true });
     
-    // notify user
     if (updatedService) {
       const user = await User.findById(updatedService.user_id);
       if (user && user.email) {
-        sendEmail(user.email, "Service Update", emailTemplate(
-          "Service Request Updated", "#f39c12",
-          `<table border="1" cellpadding="10" style="border-collapse:collapse;width:100%;text-align:left;">
-            <tr><td><strong>Status</strong></td><td>${status}</td></tr>
-            <tr><td><strong>Category</strong></td><td>${updatedService.category}</td></tr>
-          </table>`
-        ));
+        console.log("User email:", user.email);
+        console.log("Admin email:", process.env.ADMIN_EMAIL);
+        
+        await sendEmail(
+          user.email,
+          "Service Request Update",
+          emailTemplate(
+            "Service Request Updated",
+            "#f39c12",
+            `<table border="1" cellpadding="10">
+              <tr><td>Status</td><td>${status}</td></tr>
+              <tr><td>Category</td><td>${updatedService.category}</td></tr>
+            </table>`
+          )
+        );
+
+        await sendEmail(
+          process.env.ADMIN_EMAIL,
+          "Service Request Updated (Admin)",
+          emailTemplate(
+            "Service Request Updated",
+            "#f39c12",
+            `<table border="1" cellpadding="10">
+              <tr><td>User</td><td>${user.name}</td></tr>
+              <tr><td>Status</td><td>${status}</td></tr>
+            </table>`
+          )
+        );
       }
     }
     res.json({ success: true });
@@ -562,15 +580,11 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     await user.save();
     console.log("Saved user:", user);
     if (user?.email) {
-      sendEmail(user.email, "Booking Confirmed", emailTemplate(
-        "Booking Confirmed", "#10b981",
-        `Hello ${user.name},<br><br>Your booking has been confirmed.<br><br>Facility: ${facility}<br>Date: ${date}<br>Time: ${time_slot}<br><br>- Smart Stay`
-      ));
-
-      sendEmail(ADMIN_EMAIL, "New Booking", emailTemplate(
-        "New Booking", "#10b981",
-        `User: ${user.name}<br>Email: ${user.email}<br>Facility: ${facility}<br>Date: ${date}<br>Time: ${time_slot}<br><br>- Smart Stay`
-      ));
+      const htmlUser = `Hello ${user.name},<br><br>Your booking has been confirmed.<br><br>Facility: ${facility}<br>Date: ${date}<br>Time: ${time_slot}<br><br>- Smart Stay`;
+      await sendEmail(user.email, "Booking Confirmed", emailTemplate("Booking Confirmed", "#27ae60", htmlUser));
+      
+      const htmlAdmin = `User: ${user.name}<br>Email: ${user.email}<br>Facility: ${facility}<br>Date: ${date}<br>Time: ${time_slot}<br><br>- Smart Stay`;
+      await sendEmail(process.env.ADMIN_EMAIL, "Booking Confirmed", emailTemplate("Booking Confirmed", "#27ae60", htmlAdmin));
     }
     res.json({ success: true, message: `${facility} booked for ${date} at ${time_slot}! Confirmation sent.`, id: booking._id });
   } catch (err) { res.status(500).json({ error: 'Booking failed.' }); }
@@ -636,10 +650,11 @@ app.delete('/api/bookings/:id', requireAuth, async (req, res) => {
       }
     }
     if (user?.email) {
-      sendEmail(user.email, "Booking Cancelled", emailTemplate(
-        "Booking Cancelled", "#ef4444",
-        `Your booking for ${booking.facility} on ${booking.date} at ${booking.time_slot} has been cancelled.`
-      ));
+      const htmlCancel = `Your booking for ${booking.facility} on ${booking.date} at ${booking.time_slot} has been cancelled.<br><br>- Smart Stay`;
+      await sendEmail(user.email, "Booking Cancelled", emailTemplate("Booking Cancelled", "#e74c3c", htmlCancel));
+      
+      const htmlAdmin = `User: ${user.name}<br>Facility: ${booking.facility}<br>Date: ${booking.date}<br>Time: ${booking.time_slot}<br><br>- Smart Stay`;
+      await sendEmail(process.env.ADMIN_EMAIL, "Booking Cancelled", emailTemplate("Booking Cancelled", "#e74c3c", htmlAdmin));
     }
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: 'Cancel failed.' }); }
@@ -656,7 +671,8 @@ app.patch('/api/bookings/:id/usage', requireAuth, async (req, res) => {
     await booking.save();
 
     const user = await User.findById(booking.user_id);
-    if (user && user.role !== 'admin') {
+    if (user) {
+      if (user.role === 'admin') return res.json({ success: true });
       if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
       user.rating += 0.2;
       if (user.rating > 5) user.rating = 5.0;
@@ -685,152 +701,30 @@ app.patch('/api/admin/users/:id/unblock', requireAuth, async (req, res) => {
 // LOST & FOUND
 // ════════════════════════════════════════════════════════════════════
 
-app.post('/api/lost-found', requireAuth, (req, res) => {
-  upload.single('image')(req, res, async err => {
-    if (err) return res.status(400).json({ error: err.message });
-    const { type, item_name, description, location } = req.body;
-    if (!type || !item_name) return res.status(400).json({ error: 'Type and item name required.' });
-    try {
-      let embedding = [];
-      const base64Data = (req.file && req.file.path) ? fs.readFileSync(req.file.path).toString('base64') : null;
-      if (base64Data && AI_URL) {
-        try {
-          const aiRes = await fetch(AI_URL + '/embed', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_base64: base64Data }),
-            signal: AbortSignal.timeout(15000)
-          });
-          if (aiRes.ok) {
-            const data = await aiRes.json();
-            console.log('[EMBED RESPONSE] keys:', Object.keys(data), 'length:', data.embedding?.length ?? 'N/A');
-            if (Array.isArray(data.embedding) && data.embedding.length > 0) {
-              embedding = data.embedding;
-            } else {
-              console.error('[EMBED] AI returned empty/invalid embedding:', JSON.stringify(data).substring(0, 200));
-            }
-          } else {
-            const errText = await aiRes.text();
-            console.error('[EMBED] AI HTTP error', aiRes.status, errText.substring(0, 300));
-          }
-        } catch (err) {
-          console.error('[EMBED FAILED] Full error:', err.message);
-          console.error('[EMBED FAILED] AI_URL was:', AI_URL + '/embed');
-        }
-      }
-      
-      let imageUrl = "";
-      if (req.file) {
-        if (process.env.CLOUDINARY_CLOUD_NAME) {
-          try {
-            const result = await cloudinary.uploader.upload(req.file.path);
-            imageUrl = result.secure_url;
-            fs.unlinkSync(req.file.path);
-          } catch(e) { console.error("Cloudinary error:", e); imageUrl = `/uploads/${req.file.filename}`; }
-        } else {
-          imageUrl = `/uploads/${req.file.filename}`;
-        }
-      }
+app.post('/api/lost-found', requireAuth, upload.single("image"), async (req, res) => {
+  try {
+    let imageUrl = "";
 
-      console.log("DEBUG DATA:", {
-        type,
-        item_name,
-        hasImage: !!req.file,
-        embeddingLength: embedding?.length
-      });
-      if (!req.file) {
-        console.log("No image uploaded");
-      }
-      let item = await LostFound.create({
-        user_id: req.session.userId,
-        type,
-        item_name,
-        description: description || '',
-        location: location || '',
-        image: imageUrl || null,
-        embedding: Array.isArray(embedding) ? embedding : [],
-        status: 'Open'
-      });
-      // 🔥 AUTO-MATCH: notify opposite-type item owners on high-confidence match
-      if (embedding.length > 0 && AI_URL) {
-        try {
-          const oppositeType = type === 'Lost' ? 'Found' : 'Lost';
-          const candidates = await LostFound.find({
-            type: oppositeType,
-            status: 'Open',
-            _id: { $ne: item._id },
-            embedding: { $exists: true, $not: { $size: 0 } }
-          }).lean();
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path);
+      imageUrl = result.secure_url;
+      // Also delete the file after upload to avoid disk bloat
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    }
 
-          const validCandidates = candidates.filter(c => c.embedding && c.embedding.length > 0);
+    const item = new LostFound({
+      ...req.body,
+      user_id: req.session.userId,
+      image: imageUrl,
+      status: 'Open'
+    });
 
-          if (validCandidates.length > 0) {
-            const simRes = await fetch(AI_URL + '/similarity', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                source_embedding: embedding,
-                candidates: validCandidates.map(c => ({ id: c._id.toString(), embedding: c.embedding }))
-              }),
-              signal: AbortSignal.timeout(8000)
-            });
-
-            if (simRes.ok) {
-              const simData = await simRes.json();
-              const topMatches = (simData.matches || []).filter(m => m.score >= 0.85);
-
-              for (const match of topMatches.slice(0, 3)) {
-                const candDoc = validCandidates.find(c => c._id.toString() === match.id);
-                if (!candDoc) continue;
-                const candOwner = await User.findById(candDoc.user_id);
-                if (candOwner?.email) {
-                  const scoreStr = (match.score * 100).toFixed(1);
-                  sendEmail(
-                    candOwner.email,
-                    type === 'Found' ? 'Your lost item may have been found!' : 'Someone reported a found item matching yours',
-                    emailTemplate(
-                      "Potential Match Found", "#2F5D8C",
-                      `Hello ${candOwner.name},<br><br>Good news! A new ${type.toLowerCase()} item report was posted that matches your ${candDoc.type.toLowerCase()} item "${candDoc.item_name}" with ${scoreStr}% image similarity.<br><br>Please log in to your dashboard to review the match.<br><br>- Smart Stay`
-                    )
-                  );
-                }
-              }
-            }
-          }
-        } catch (err) {
-          console.log('Auto-match failed:', err.message);
-        }
-      }
-      const user = await User.findById(req.session.userId);
-      if (user?.email) {
-        let attachments = [];
-        if (base64Data) {
-          try {
-            attachments.push({
-              content: base64Data,
-              filename: req.file.originalname,
-              type: req.file.mimetype,
-              disposition: "attachment"
-            });
-          } catch (e) {
-            console.error("Attachment err:", e);
-          }
-        }
-
-        const isLost = type === 'Lost';
-        sendEmail(user.email, isLost ? "Lost Item Report Submitted" : "Found Item Submitted", emailTemplate(
-          isLost ? "Lost Item Report" : "Found Item Report", "#2F5D8C",
-          `Hello ${user.name},<br><br>Your ${isLost ? "lost item report" : "found item report"} has been submitted.<br><br>Item: ${item_name}<br>Description: ${description}<br>Location: ${location || "Not specified"}<br><br>- Smart Stay`
-        ), attachments);
-
-        sendEmail(ADMIN_EMAIL, "Lost/Found Report", emailTemplate(
-          "Lost/Found Report", "#2F5D8C",
-          `User: ${user.name}<br>Email: ${user.email}<br>Type: ${type}<br>Item: ${item_name}<br>Location: ${location}<br>Description: ${description}<br><br>- Smart Stay`
-        ), attachments);
-      }
-      res.json({ success: true, message: 'Report posted!', id: item._id, embeddingGenerated: embedding.length > 0 });
-    } catch (err) { res.status(500).json({ error: 'Failed to post.' }); }
-  });
+    await item.save();
+    res.json(item);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to post.' });
+  }
 });
 
 app.post('/api/match-image', requireAuth, async (req, res) => {
@@ -1026,7 +920,8 @@ setInterval(async () => {
           await bk.save();
 
           const user = await User.findById(bk.user_id);
-          if (user && user.role !== 'admin') {
+          if (user) {
+            if (user.role === 'admin') continue;
             if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
             user.noShows = (user.noShows || 0) + 1;
             user.rating -= 1.0;
