@@ -98,11 +98,9 @@ async function sendEmail(to, subject, htmlContent, attachments = []) {
 
 // ── Middleware ────────────────────────────────────────────────────
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://smart-stay-0gxx.onrender.com"
-  ],
-  credentials: true
+  origin: "*",
+  methods: ["GET","POST","PUT","DELETE"],
+  allowedHeaders: ["Content-Type"]
 }));
 app.set('trust proxy', 1);
 app.use(express.json());
@@ -715,7 +713,7 @@ app.patch('/api/admin/users/:id/unblock', requireAuth, async (req, res) => {
 // LOST & FOUND
 // ════════════════════════════════════════════════════════════════════
 
-app.post('/api/lost-found', requireAuth, upload.single("image"), async (req, res) => {
+app.post("/api/lost-found", upload.single("image"), async (req, res) => {
   try {
     let imageUrl = "";
 
@@ -726,18 +724,24 @@ app.post('/api/lost-found', requireAuth, upload.single("image"), async (req, res
       if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     }
 
+    // Applying mapping to make their exact code work with existing schema
     const item = new LostFound({
-      ...req.body,
-      user_id: req.session.userId,
+      user_id: req.session ? req.session.userId : req.userId,
+      item_name: req.body.description || "Unknown",
+      type: req.body.type,
+      description: req.body.description,
+      location: req.body.location,
+      details: req.body.details,
       image: imageUrl,
       status: 'Open'
     });
 
     await item.save();
-    res.json(item);
+
+    res.status(200).json(item);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to post.' });
+    console.error("Lost&Found error:", err);
+    res.status(500).json({ error: "Upload failed" });
   }
 });
 

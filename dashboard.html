@@ -892,6 +892,33 @@
         grid-template-columns: 1fr !important;
       }
     }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: 0;
+    }
+
+    .main-content {
+      padding-left: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 60px;   /* shrink sidebar */
+      }
+
+      .main-content {
+        margin-left: 60px;
+        padding: 10px;
+      }
+
+      .page-header {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
   </style>
 </head>
 
@@ -1143,8 +1170,8 @@
             <div class="field"><label>Last Known Location</label><input type="text" id="lfLocation"
                 placeholder="Near Block A canteen…" /></div>
             <div class="field"><label>Evidence Photo</label>
-              <div class="upload-zone" onclick="document.getElementById('photoInput').click()">
-                <input type="file" id="photoInput" accept="image/*" onchange="previewLF(event)" />
+              <div class="upload-zone" onclick="document.getElementById('imageInput').click()">
+                <input type="file" id="imageInput" accept="image/*" onchange="previewLF(event)" />
                 📷 Attach photo evidence<br><small style="opacity:0.7">JPEG / PNG, max 5MB</small>
                 <img id="previewImage" class="preview-img" style="display:none;" src="" alt="" />
               </div>
@@ -1384,7 +1411,7 @@
     }
 
     function previewLF(e) {
-      const fileInput = document.querySelector('#photoInput');
+      const fileInput = document.getElementById('imageInput');
       const preview = document.querySelector('#previewImage');
       const file = fileInput.files[0];
       if (file) {
@@ -1395,20 +1422,39 @@
 
     async function submitLF() {
       const type = document.getElementById('lfType').value;
-      const item_name = document.getElementById('lfName').value.trim();
-      if (!item_name) return showMsg('lfMsg', 'Item name required.', 'error');
+      const description = document.getElementById('lfName').value.trim();
+      const details = document.getElementById('lfDesc').value;
+      const location = document.getElementById('lfLocation').value;
+      if (!description) return showMsg('lfMsg', 'Item name required.', 'error');
       
       showMsg('lfMsg', 'Uploading & Finding matches...', 'success');
-      const formData = new FormData();
-      formData.append('type', type); formData.append('item_name', item_name);
-      formData.append('description', document.getElementById('lfDesc').value);
-      formData.append('location', document.getElementById('lfLocation').value);
-      const photo = document.getElementById('photoInput').files[0];
-      if (photo) formData.append('image', photo);
+      const file = document.getElementById("imageInput").files[0];
       
-      const res = await fetch('https://smart-stay-0gxx.onrender.com/api/lost-found', { method: 'POST', credentials: 'include', body: formData });
-      const d = await res.json();
-      if (d.error) return showMsg('lfMsg', d.error, 'error');
+      const formData = new FormData();
+      formData.append("type", type);
+      formData.append("description", description);
+      formData.append("location", location);
+      formData.append("details", details);
+
+      if (file) {
+        formData.append("image", file);
+      }
+
+      let d;
+      try {
+        const res = await fetch("/api/lost-found", {
+          method: "POST",
+          body: formData
+        });
+        d = await res.json();
+        console.log("Response:", d);
+      } catch (err) {
+        console.error("Upload failed:", err);
+      }
+      
+      if (!d || d.error) {
+        return showMsg('lfMsg', d ? d.error : 'Failed to post.', 'error');
+      }
       
       showMsg('lfMsg', 'Analyzing image similarity...', 'success');
       
