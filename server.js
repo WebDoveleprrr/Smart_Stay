@@ -97,16 +97,11 @@ async function sendEmail(to, subject, htmlContent, attachments = []) {
 }
 
 // ── Middleware ────────────────────────────────────────────────────
-const allowedOrigins = [
-  "https://smart-stay-0gxx.onrender.com",
-  "http://localhost:3000",
-  "http://127.0.0.1:3000"
-];
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) callback(null, true);
-    else callback(new Error('Not allowed by CORS'));
-  },
+  origin: [
+    "http://localhost:3000",
+    "https://smart-stay-0gxx.onrender.com"
+  ],
   credentials: true
 }));
 app.set('trust proxy', 1);
@@ -470,23 +465,29 @@ app.post('/api/services', requireAuth, async (req, res) => {
   const { category, description, priority } = req.body;
   if (!category) return res.status(400).json({ error: 'Category required.' });
   try {
-    const user = await User.findById(req.session.userId);
-    const svc = await ServiceRequest.create({
+    const currentUser = await User.findById(req.session.userId);
+    const svc = new ServiceRequest({
+      userId: req.session.userId,
       user_id: req.session.userId,
       category,
       description: description || '',
       priority: priority || 'Normal',
-      block: user?.block || '',
-      room: user?.room || ''
+      block: currentUser?.block || '',
+      room: currentUser?.room || ''
     });
+    await svc.save();
 
+    const user = await User.findById(req.session.userId);
     if (user?.email) {
-      sendEmail(user.email, "Service Request Received", emailTemplate(
+      console.log("Booking user ID:", svc.user_id);
+      console.log("Fetched user email:", user.email);
+
+      await sendEmail(user.email, "Service Request Received", emailTemplate(
         "Service Request Received", "#f39c12",
         `Hello ${user.name},<br><br>Your service request has been submitted.<br><br>Category: ${category}<br>Description: ${description}<br>Priority: ${priority}<br><br>We will resolve it soon.<br><br>- Smart Stay`
       ));
 
-      sendEmail(ADMIN_EMAIL, "New Service Request", emailTemplate(
+      await sendEmail(process.env.ADMIN_EMAIL, "New Service Request", emailTemplate(
         "New Service Request", "#f39c12",
         `User: ${user.name}<br>Email: ${user.email}<br>Category: ${category}<br>Priority: ${priority}<br>Description: ${description}<br><br>- Smart Stay`
       ));
@@ -523,8 +524,8 @@ app.patch('/api/services/:id', requireAuth, async (req, res) => {
     if (updatedService) {
       const user = await User.findById(updatedService.user_id);
       if (user && user.email) {
-        console.log("User email:", user.email);
-        console.log("Admin email:", process.env.ADMIN_EMAIL);
+        console.log("Booking user ID:", updatedService.user_id);
+        console.log("Fetched user email:", user.email);
         
         await sendEmail(
           user.email,
@@ -574,16 +575,26 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     const existing = await Booking.findOne({ facility, date, time_slot, status: 'Confirmed' });
     if (existing) return res.status(409).json({ error: 'This slot is already booked. Choose another time.' });
 
-    const booking = await Booking.create({ user_id: req.session.userId, facility, date, time_slot });
+    const booking = new Booking({
+      userId: req.session.userId,
+      user_id: req.session.userId,
+      facility,
+      date,
+      time_slot
+    });
+    await booking.save();
+
     user.totalBookings = (user.totalBookings || 0) + 1;
-    console.log("Before save:", user);
     await user.save();
-    console.log("Saved user:", user);
-    if (user?.email) {
-      const htmlUser = `Hello ${user.name},<br><br>Your booking has been confirmed.<br><br>Facility: ${facility}<br>Date: ${date}<br>Time: ${time_slot}<br><br>- Smart Stay`;
-      await sendEmail(user.email, "Booking Confirmed", emailTemplate("Booking Confirmed", "#27ae60", htmlUser));
+
+    const freshUser = await User.findById(req.session.userId);
+    if (freshUser?.email) {
+      console.log("Booking user ID:", booking.user_id);
+      console.log("Fetched user email:", freshUser.email);
+      const htmlUser = `Hello ${freshUser.name},<br><br>Your booking has been confirmed.<br><br>Facility: ${facility}<br>Date: ${date}<br>Time: ${time_slot}<br><br>- Smart Stay`;
+      await sendEmail(freshUser.email, "Booking Confirmed", emailTemplate("Booking Confirmed", "#27ae60", htmlUser));
       
-      const htmlAdmin = `User: ${user.name}<br>Email: ${user.email}<br>Facility: ${facility}<br>Date: ${date}<br>Time: ${time_slot}<br><br>- Smart Stay`;
+      const htmlAdmin = `User: ${freshUser.name}<br>Email: ${freshUser.email}<br>Facility: ${facility}<br>Date: ${date}<br>Time: ${time_slot}<br><br>- Smart Stay`;
       await sendEmail(process.env.ADMIN_EMAIL, "Booking Confirmed", emailTemplate("Booking Confirmed", "#27ae60", htmlAdmin));
     }
     res.json({ success: true, message: `${facility} booked for ${date} at ${time_slot}! Confirmation sent.`, id: booking._id });
@@ -649,11 +660,14 @@ app.delete('/api/bookings/:id', requireAuth, async (req, res) => {
         await user.save();
       }
     }
-    if (user?.email) {
+    const freshUser = await User.findById(booking.user_id);
+    if (freshUser?.email) {
+      console.log("Booking user ID:", booking.user_id);
+      console.log("Fetched user email:", freshUser.email);
       const htmlCancel = `Your booking for ${booking.facility} on ${booking.date} at ${booking.time_slot} has been cancelled.<br><br>- Smart Stay`;
-      await sendEmail(user.email, "Booking Cancelled", emailTemplate("Booking Cancelled", "#e74c3c", htmlCancel));
+      await sendEmail(freshUser.email, "Booking Cancelled", emailTemplate("Booking Cancelled", "#e74c3c", htmlCancel));
       
-      const htmlAdmin = `User: ${user.name}<br>Facility: ${booking.facility}<br>Date: ${booking.date}<br>Time: ${booking.time_slot}<br><br>- Smart Stay`;
+      const htmlAdmin = `User: ${freshUser.name}<br>Facility: ${booking.facility}<br>Date: ${booking.date}<br>Time: ${booking.time_slot}<br><br>- Smart Stay`;
       await sendEmail(process.env.ADMIN_EMAIL, "Booking Cancelled", emailTemplate("Booking Cancelled", "#e74c3c", htmlAdmin));
     }
     res.json({ success: true });
