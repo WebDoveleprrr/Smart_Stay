@@ -141,15 +141,7 @@ mongoose.connect(uri)
   });
 
 // ── File Uploads ──────────────────────────────────────────────────
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/')
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
-  }
-});
+const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -718,10 +710,13 @@ app.post("/api/lost-found", upload.single("image"), async (req, res) => {
     let imageUrl = "";
 
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path);
+      const result = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream((error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }).end(req.file.buffer);
+      });
       imageUrl = result.secure_url;
-      // Also delete the file after upload to avoid disk bloat
-      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     }
 
     // Applying mapping to make their exact code work with existing schema
