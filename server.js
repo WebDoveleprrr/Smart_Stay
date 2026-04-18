@@ -713,14 +713,21 @@ app.post("/api/lost-found", upload.any(), async (req, res) => {
   console.log(`[Lost & Found POST] Files:`, req.files);
 
   try {
-    let imageUrl = "";
+    let imagePayload = null;
 
     // Extract file dynamically if present
     const imageFile = req.files && req.files.length > 0 ? req.files[0] : req.file;
 
     if (imageFile) {
+      // Setup the graceful Base64 MongoDB fallback ready to be used if Cloudinary isn't available
+      const base64Fallback = {
+        data: imageFile.buffer.toString('base64'),
+        contentType: imageFile.mimetype
+      };
+
       if (!process.env.CLOUDINARY_API_KEY) {
-        console.warn("[Cloudinary] WARNING: Missing API Key! Skipping image upload.");
+        console.warn("[Cloudinary] WARNING: Missing API Key! Falling back to MongoDB Base64 Storage.");
+        imagePayload = base64Fallback;
       } else {
         try {
           console.log("[Cloudinary] Starting image stream upload...");
@@ -730,12 +737,11 @@ app.post("/api/lost-found", upload.any(), async (req, res) => {
               else resolve(result);
             }).end(imageFile.buffer);
           });
-          imageUrl = result.secure_url;
-          console.log("[Cloudinary] Upload successful! URL:", imageUrl);
+          imagePayload = result.secure_url;
+          console.log("[Cloudinary] Upload successful! URL:", imagePayload);
         } catch (uploadErr) {
-          console.error("[Cloudinary] Critical Upload Failure:", uploadErr);
-          // Fallback: Continue with empty imageUrl to not break the entire request
-          imageUrl = "";
+          console.error("[Cloudinary] Critical Upload Failure, falling back to MongoDB Base64:", uploadErr);
+          imagePayload = base64Fallback;
         }
       }
     } else {
@@ -750,7 +756,7 @@ app.post("/api/lost-found", upload.any(), async (req, res) => {
       description: req.body.description,
       location: req.body.location,
       details: req.body.details,
-      image: imageUrl,
+      image: imagePayload,
       status: 'Open'
     });
 
