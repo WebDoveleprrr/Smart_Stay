@@ -1386,6 +1386,14 @@
       const d = await res.json();
       if (d.error) return showMsg('facMsg', d.error, 'error');
       showMsg('facMsg', d.message, 'success');
+      
+      // Reset selected fields
+      document.getElementById('facDate').value = '';
+      selectedFacility = '';
+      selectedSlot = '';
+      document.querySelectorAll('.fac-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+
       loadBookings(); loadOverview();
     }
 

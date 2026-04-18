@@ -710,7 +710,6 @@ app.patch('/api/admin/users/:id/unblock', requireAuth, async (req, res) => {
 app.post("/api/lost-found", upload.any(), async (req, res) => {
   console.log(`[Lost & Found POST] Request from ${req.session?.userId || req.userId || 'Guest'}`);
   console.log(`[Lost & Found POST] Body:`, req.body);
-  console.log(`[Lost & Found POST] Files:`, req.files);
 
   try {
     let imagePayload = null;
@@ -726,7 +725,7 @@ app.post("/api/lost-found", upload.any(), async (req, res) => {
       };
 
       if (!process.env.CLOUDINARY_API_KEY) {
-        console.warn("[Cloudinary] WARNING: Missing API Key! Falling back to MongoDB Base64 Storage.");
+        // Silently fallback to MongoDB Base64 Storage
         imagePayload = base64Fallback;
       } else {
         try {
