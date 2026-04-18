@@ -98,9 +98,10 @@ async function sendEmail(to, subject, htmlContent, attachments = []) {
 
 // ── Middleware ────────────────────────────────────────────────────
 app.use(cors({
-  origin: "*",
-  methods: ["GET","POST","PUT","DELETE"],
-  allowedHeaders: ["Content-Type"]
+  origin: true, // dynamically reflects origin
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.set('trust proxy', 1);
 app.use(express.json());
@@ -705,18 +706,40 @@ app.patch('/api/admin/users/:id/unblock', requireAuth, async (req, res) => {
 // LOST & FOUND
 // ════════════════════════════════════════════════════════════════════
 
-app.post("/api/lost-found", upload.single("image"), async (req, res) => {
+// Use upload.any() to flexibly handle FormData regardless of field name mismatch
+app.post("/api/lost-found", upload.any(), async (req, res) => {
+  console.log(`[Lost & Found POST] Request from ${req.session?.userId || req.userId || 'Guest'}`);
+  console.log(`[Lost & Found POST] Body:`, req.body);
+  console.log(`[Lost & Found POST] Files:`, req.files);
+
   try {
     let imageUrl = "";
 
-    if (req.file) {
-      const result = await new Promise((resolve, reject) => {
-        cloudinary.uploader.upload_stream((error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }).end(req.file.buffer);
-      });
-      imageUrl = result.secure_url;
+    // Extract file dynamically if present
+    const imageFile = req.files && req.files.length > 0 ? req.files[0] : req.file;
+
+    if (imageFile) {
+      if (!process.env.CLOUDINARY_API_KEY) {
+        console.warn("[Cloudinary] WARNING: Missing API Key! Skipping image upload.");
+      } else {
+        try {
+          console.log("[Cloudinary] Starting image stream upload...");
+          const result = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream((error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }).end(imageFile.buffer);
+          });
+          imageUrl = result.secure_url;
+          console.log("[Cloudinary] Upload successful! URL:", imageUrl);
+        } catch (uploadErr) {
+          console.error("[Cloudinary] Critical Upload Failure:", uploadErr);
+          // Fallback: Continue with empty imageUrl to not break the entire request
+          imageUrl = "";
+        }
+      }
+    } else {
+      console.log("[Lost & Found POST] No image attached.");
     }
 
     // Applying mapping to make their exact code work with existing schema
