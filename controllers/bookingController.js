@@ -142,6 +142,29 @@ exports.deleteBooking = async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Cancel failed.' }); }
 };
 
+// PATCH /api/bookings/:id/usage
+exports.markUsed = async (req, res) => {
+  if (req.session.userRole !== 'admin') return res.status(403).json({ error: 'Unauthorized.' });
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Not found.' });
+    if (booking.status === 'completed') return res.status(400).json({ error: 'Already marked as completed.' });
+
+    booking.status = 'completed';
+    await booking.save();
+
+    const User = getUserModel();
+    const user = await User.findById(booking.user_id);
+    if (user && user.role !== 'admin') {
+      user.rating = Math.min(5.0, (user.rating || 5.0) + 0.2);
+      await user.save();
+      await sendEmail(user.email, "Booking Time Over - Thank You", emailTemplate("Booking Completed", "#10b981", `Hello ${user.name},<br><br>Your booking time for ${booking.facility} is over and an administrator has verified your correct usage.<br><br>Your Smart Campus Reliability Rating has successfully increased by 0.2.<br><b>New Rating: ${user.rating.toFixed(1)}/5.0</b>`));
+    }
+    
+    res.json({ success: true, message: 'Marked as Used.' });
+  } catch (err) { res.status(500).json({ error: 'Error marking use.' }); }
+};
+
 // POST /api/bookings/report/:id
 exports.reportBooking = async (req, res) => {
   try {
@@ -156,8 +179,9 @@ exports.reportBooking = async (req, res) => {
       // Anti-abuse: if report is invalid
       const reporter = await User.findById(reporterId);
       if (reporter && reporter.role !== 'admin') {
-        reporter.rating = Math.max(0, (reporter.rating || 5.0) - 0.2);
+        reporter.rating = Math.max(0, (reporter.rating || 5.0) - 0.7);
         await reporter.save();
+        await sendEmail(reporter.email, "False Report Penalty", emailTemplate("Continuous False Report", "#ef4444", `Hello ${reporter.name},<br><br>You reported a facility booking as empty, but the system verified the facility is actively in use.<br><br>Submitting false reports abuses the automated booking system. As a strict penalty, your Smart Campus Reliability Rating has plummeted by 0.7.<br><br><b>New Rating: ${reporter.rating.toFixed(1)}/5.0</b>`));
       }
       return res.status(400).json({ error: 'Facility is already in use. Your rating has been decreased for false reporting.' });
     }

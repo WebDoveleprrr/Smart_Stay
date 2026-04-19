@@ -33,24 +33,7 @@ cron.schedule('*/5 * * * *', async () => {
       }
     }
 
-    // b) Complete if status = in_use AND time > endTime
-    const inUseBookings = await Booking.find({
-      status: 'in_use',
-      endTime: { $lt: now }
-    });
-
-    for (const bk of inUseBookings) {
-      bk.status = 'completed';
-      await bk.save();
-
-      const User = getUserModel();
-      const user = await User.findById(bk.user_id);
-      if (user && user.role !== 'admin') {
-        user.rating = Math.min(5.0, (user.rating || 5.0) + 0.2);
-        await user.save();
-        await sendEmail(user.email, "Booking Completed", emailTemplate("Booking Success", "#10b981", `Hello ${user.name},<br><br>Your booking completed successfully.<br>Rating increased by 0.2. New rating: ${user.rating.toFixed(1)}/5.0`));
-      }
-    }
+    // Admin visually verifies and clicks "Used" now. Auto-complete disabled.
 
   } catch (err) {
     console.error("Booking Cron Error:", err);

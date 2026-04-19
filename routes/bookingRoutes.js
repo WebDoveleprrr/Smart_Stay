@@ -11,6 +11,7 @@ router.post('/', bookingController.createBooking);
 router.get('/all-active', bookingController.getAllActiveBookings);
 router.get('/', bookingController.getBookings);
 router.delete('/:id', bookingController.deleteBooking);
+router.patch('/:id/usage', bookingController.markUsed);
 
 router.post('/report/:id', bookingController.reportBooking);
 router.post('/checkin/:id', bookingController.checkIn);
