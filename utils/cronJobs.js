@@ -26,6 +26,7 @@ cron.schedule('*/5 * * * *', async () => {
       const user = await User.findById(bk.user_id);
       if (user && user.role !== 'admin') {
         user.rating = Math.max(0, (user.rating || 5.0) - 0.5);
+        user.noShows = (user.noShows || 0) + 1;
         if (user.rating < 3.0) user.isBlocked = true;
         await user.save();
         await sendEmail(user.email, "Booking Cancelled", emailTemplate("Booking Auto-Cancelled", "#dc2626", `Hello ${user.name},<br><br>Your booking was cancelled due to no-show or reports.<br>Rating decreased by 0.5. New rating: ${user.rating.toFixed(1)}/5.0`));
