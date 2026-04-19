@@ -1157,28 +1157,6 @@
                 </table>
               </div>
             </div>
-            
-            <div class="card" style="margin-top:20px; grid-column: 1 / -1;">
-              <div class="card-title">All Active Bookings</div>
-              <div class="card-sub">Report Ghost Bookings (Empty Facilities)</div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Facility</th>
-                      <th>Date</th>
-                      <th>Slot</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody id="activeBookTable">
-                    <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:30px">Loading…</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
           </div>
         </div>
 
@@ -1407,6 +1385,127 @@
           loadActiveBookings();
         }
       } catch (e) { alert("Network error"); }
+    }
+
+    async function cancelBooking(id) {
+      if (!confirm("Are you sure you want to cancel this booking?")) return;
+      try {
+        const res = await fetch('/api/bookings/' + id, { method: 'DELETE', credentials: 'include' });
+        const d = await res.json();
+        if (d.error) alert(d.error);
+        else {
+          alert('Cancelled successfully.');
+          loadBookings(); loadOverview();
+        }
+      } catch (e) { alert("Network error"); }
+    }
+
+    async function submitService() {
+      if (!selectedCategory) return showMsg('srvMsg', 'Please select a category.', 'error');
+      const desc = document.getElementById('srvDesc').value.trim();
+      const priority = document.getElementById('srvPriority').value;
+      const severity = priority.toLowerCase() === 'urgent' ? 'high' : (priority.toLowerCase() === 'normal' ? 'low' : 'medium');
+      const res = await fetch('/api/services', { 
+         method: 'POST', credentials: 'include', 
+         headers: { 'Content-Type': 'application/json' }, 
+         body: JSON.stringify({ category: selectedCategory, description: desc, severity, location: 'Hostel' }) 
+      });
+      const d = await res.json();
+      if (d.error) return showMsg('srvMsg', d.error, 'error');
+      showMsg('srvMsg', d.message, 'success');
+      document.getElementById('srvDesc').value = ''; selectedCategory = '';
+      document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
+      loadServices(); loadOverview();
+    }
+
+    async function loadServices() {
+      const d = await fetch('/api/services', { credentials: 'include' }).then(r => r.json());
+      const reqs = d.requests || [];
+      document.getElementById('srvTable').innerHTML = reqs.length
+        ? reqs.map(r => `<tr>
+      <td>${catIcons[r.category] || '⚙️'} ${r.category}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${r.description || '—'}</td>
+      <td><span class="badge ${r.priority.toLowerCase()}">${r.priority}</span></td>
+      <td><span class="badge ${r.status === 'Pending' ? 'pending' : r.status === 'Resolved' ? 'resolved' : 'progress'}">${r.status}</span></td>
+      <td style="font-size:0.72rem;color:var(--muted)">${new Date(r.created_at * 1000).toLocaleDateString()}</td>
+    </tr>`).join('')
+        : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">No requests yet</td></tr>';
+    }
+
+    function selectFacility(el, name) { document.querySelectorAll('.fac-btn').forEach(b => b.classList.remove('selected')); el.classList.add('selected'); selectedFacility = name; }
+    function selectSlot(el, name) { document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected')); el.classList.add('selected'); selectedSlot = name; }
+
+    async function submitBooking() {
+      if (!selectedFacility) return showMsg('facMsg', 'Select a facility.', 'error');
+      const date = document.getElementById('facDate').value;
+      if (!date) return showMsg('facMsg', 'Select a date.', 'error');
+
+      const today = new Date().toISOString().split('T')[0];
+      if (date < today) return showMsg('facMsg', 'Cannot book a facility in the past.', 'error');
+
+      if (!selectedSlot) return showMsg('facMsg', 'Select a time slot.', 'error');
+      const res = await fetch('/api/bookings', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ facility: selectedFacility, date, time_slot: selectedSlot }) });
+      const d = await res.json();
+      if (d.error) return showMsg('facMsg', d.error, 'error');
+      showMsg('facMsg', d.message, 'success');
+
+      // Reset selected fields
+      document.getElementById('facDate').value = '';
+      selectedFacility = '';
+      selectedSlot = '';
+      document.querySelectorAll('.fac-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+
+      loadBookings(); loadActiveBookings(); loadOverview();
+    }
+
+    async function reportBooking(id) {
+      if (!confirm('Report this booking as empty? (False reports incur a penalty)')) return;
+      try {
+        const res = await fetch(`/api/bookings/report/${id}`, { method: 'POST', credentials: 'include' });
+        const d = await res.json();
+        if (d.error) alert(d.error);
+        else {
+          alert('Report submitted!');
+          loadActiveBookings();
+          loadBookings();
+          loadOverview();
+        }
+      } catch(e) { alert("Network Error"); }
+    }
+
+    async function loadActiveBookings() {
+      try {
+        const d = await fetch('/api/bookings/all-active', { credentials: 'include' }).then(r => r.json());
+        const books = d.bookings || [];
+        document.getElementById('activeBookTable').innerHTML = books.length
+          ? books.map(b => `<tr>
+        <td>${b.facility}</td>
+        <td>${b.date}</td>
+        <td>${b.time_slot}</td>
+        <td><span class="badge ${b.status === 'under_review' ? 'urgent' : 'confirmed'}">${b.status}</span></td>
+        <td>
+          <button class="btn-danger" onclick="reportBooking('${b._id || b.id}')" style="background:#f59e0b; border:none; padding:4px 8px; font-size:0.75rem; cursor:pointer;">Report Empty</button>
+        </td>
+      </tr>`).join('')
+          : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">No active bookings found</td></tr>';
+      } catch (e) { console.error("Active bookings query failed"); }
+    }
+
+    async function loadBookings() {
+      const d = await fetch('/api/bookings', { credentials: 'include' }).then(r => r.json());
+      const books = d.bookings || [];
+      document.getElementById('bookTable').innerHTML = books.length
+        ? books.map(b => `<tr>
+      <td>${b.facility}</td>
+      <td>${b.date}</td>
+      <td>${b.time_slot}</td>
+      <td><span class="badge ${b.status === 'cancelled' ? 'urgent' : (b.status === 'completed' ? 'resolved' : ['booked', 'under_review'].includes(b.status) ? 'confirmed' : 'progress')}">${b.status}</span></td>
+      <td>
+        ${['booked', 'under_review'].includes(b.status) ? `<button class="btn" style="background:#10b981; border:none; padding:4px 8px; font-size:0.75rem; margin-right:5px; cursor:pointer;" onclick="checkInBooking('${b._id || b.id}')">Check-In</button><button class="btn-danger" style="padding:4px 8px; font-size:0.75rem; cursor:pointer;" onclick="cancelBooking('${b._id || b.id}')">Cancel</button>` : ''}
+      </td>
+    </tr>`).join('')
+        : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">No bookings yet</td></tr>';
     }
 
     async function cancelBooking(id) {
