@@ -66,6 +66,7 @@ exports.createBooking = async (req, res) => {
       status: 'booked'
     });
     await booking.save();
+    console.log("Booking created:", booking);
 
     user.totalBookings = (user.totalBookings || 0) + 1;
     await user.save();
@@ -197,4 +198,14 @@ exports.checkIn = async (req, res) => {
 
     res.json({ success: true, message: 'Checked in successfully.' });
   } catch (err) { res.status(500).json({ error: 'Check-in failed.' }); }
+};
+
+exports.getAllActiveBookings = async (req, res) => {
+  try {
+    console.log("Fetching all active bookings");
+    const bookings = await Booking.find({ status: { $in: ['booked', 'under_review'] } }).lean();
+    res.json({ bookings });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch active bookings' });
+  }
 };

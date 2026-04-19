@@ -1411,7 +1411,7 @@
       document.querySelectorAll('.fac-btn').forEach(b => b.classList.remove('selected'));
       document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
 
-      loadBookings(); loadOverview();
+      loadBookings(); loadActiveBookings(); loadOverview();
     }
 
     async function loadBookings() {
@@ -1675,6 +1675,24 @@
         console.error("Dashboard profile load error:", err);
         document.getElementById('profileContent').innerHTML = '<div style="color:var(--error);padding:20px;">Failed to load user data.</div>';
       }
+    }
+
+    
+    async function loadActiveBookings() {
+      try {
+        const d = await fetch('/api/bookings/all-active', { credentials: 'include' }).then(r => r.json());
+        const books = d.bookings || [];
+        document.getElementById('activeBookingsTable').innerHTML = books.length
+          ? books.map(b => `<tr>
+        <td>${b.facility}</td>
+        <td>${b.date} ${b.time_slot}</td>
+        <td><span class="badge ${b.status === 'booked' ? 'confirmed' : 'progress'}">${b.status}</span></td>
+        <td>
+           <button class="btn" style="padding:4px 8px;font-size:0.75rem;border:1px solid #DC2626;background:transparent;color:#DC2626;cursor:pointer;" onclick="reportNotUse('${b._id || b.id}')">Report Ghost Booking</button>
+        </td>
+      </tr>`).join('')
+          : '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:28px">No active bookings globally</td></tr>';
+      } catch (err) { }
     }
 
     function goHome() {
