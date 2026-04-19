@@ -648,7 +648,7 @@ app.post('/api/confirm-match', requireAuth, async (req, res) => {
     const sOwner = await User.findById(source.user_id);
     const tOwner = await User.findById(target.user_id);
 
-    const sendMatchEmails = (user, item, matchedItemTitle) => {
+    const sendMatchEmails = async (user, item, matchedItemTitle) => {
       if (!user?.email) return;
       if (item.type === 'Lost') {
         await sendEmail(
