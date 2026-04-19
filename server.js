@@ -68,7 +68,7 @@ function emailTemplate(title, color, body) {
   </div>`;
 }
 
-async function sendEmail(to, subject, htmlContent, attachments = []) {
+async function await sendEmail(to, subject, htmlContent, attachments = []) {
   const msg = {
     to,
     from: process.env.EMAIL_USER || "brohitchowdary5@gmail.com",
@@ -251,13 +251,13 @@ app.post('/api/register', async (req, res) => {
     });
 
     // Send registration confirmation email
-    sendEmail(user.email, "Welcome to Smart Stay", emailTemplate(
+    await sendEmail(user.email, "Welcome to Smart Stay", emailTemplate(
       "Welcome to Smart Stay",
       "#2F5D8C",
       `Hello ${user.name},<br><br>Your account has been created successfully.<br>You can now login.<br><br>- Smart Stay`
     ));
 
-    sendEmail(ADMIN_EMAIL, "New User Registered", emailTemplate(
+    await sendEmail(ADMIN_EMAIL, "New User Registered", emailTemplate(
       "New User Registered",
       "#2F5D8C",
       `New user registered:<br><br>Name: ${user.name}<br>Email: ${user.email}<br>Block: ${user.block}<br>Room: ${user.room}<br>Phone: ${user.phone}<br><br>- Smart Stay`
@@ -315,7 +315,7 @@ app.post('/api/login', async (req, res) => {
         console.error('Session save error:', err);
         return res.status(500).json({ error: 'Session error. Please try again.' });
       }
-      sendEmail(user.email, "Smart Stay Login Code", emailTemplate(
+      await sendEmail(user.email, "Smart Stay Login Code", emailTemplate(
         "Login Verification Code", "#2F5D8C",
         `Hello ${user.name || 'User'},<br><br>Your login code is: <b>${otp}</b><br><br>Valid for 5 minutes.<br>If not you, ignore.<br><br>- Smart Stay`
       ));
@@ -382,7 +382,7 @@ app.post('/api/resend-otp', async (req, res) => {
     await User.findByIdAndUpdate(user._id, { otp: newOtp, otp_expires: newExpires });
     user.otp = newOtp; // for email below
 
-    sendEmail(user.email, "Smart Stay Login Verification Code", emailTemplate(
+    await sendEmail(user.email, "Smart Stay Login Verification Code", emailTemplate(
       "Login Verification Code", "#2F5D8C",
       `Hello ${user.name || 'User'},<br><br>You requested a new login code.<br><br>Verification Code:<br><b>${user.otp}</b><br><br>This code is valid for 5 minutes.<br>If this was not you, please ignore.<br><br>- Smart Stay`
     ));
@@ -651,13 +651,13 @@ app.post('/api/confirm-match', requireAuth, async (req, res) => {
     const sendMatchEmails = (user, item, matchedItemTitle) => {
       if (!user?.email) return;
       if (item.type === 'Lost') {
-        sendEmail(
+        await sendEmail(
           user.email,
           "Your lost item has been found",
           emailTemplate("Match Confirmed", "#10b981", `Hello ${user.name},<br><br>Good news! Your lost item '${item.item_name}' has been matched with a found item.<br><br>Please check your dashboard for details.<br><br>- Smart Stay`)
         );
       } else {
-        sendEmail(
+        await sendEmail(
           user.email,
           "Match confirmed for found item",
           emailTemplate("Match Confirmed", "#10b981", `Hello ${user.name},<br><br>The item you reported has been successfully matched with a lost report and the case is now closed.<br><br>- Smart Stay`)
