@@ -310,7 +310,7 @@ app.post('/api/login', async (req, res) => {
     await User.findByIdAndUpdate(user._id, { otp, otp_expires: expires });
     req.session.pendingUserId = user._id.toString();
 
-    req.session.save((err) => {
+    req.session.save(async (err) => {
       if (err) {
         console.error('Session save error:', err);
         return res.status(500).json({ error: 'Session error. Please try again.' });
