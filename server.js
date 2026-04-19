@@ -15,6 +15,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+require('./utils/cronJobs');
 const { v2: cloudinary } = require('cloudinary');
 
 // Cloudinary config
@@ -179,30 +180,7 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-const serviceSchema = new mongoose.Schema({
-  _id: { type: String, default: () => uuidv4() },
-  user_id: { type: String, required: true },
-  category: { type: String, required: true },
-  description: { type: String, default: '' },
-  status: { type: String, default: 'Pending' },
-  priority: { type: String, default: 'Normal' },
-  block: { type: String, default: '' },
-  room: { type: String, default: '' },
-  created_at: { type: Number, default: () => Math.floor(Date.now() / 1000) },
-  updated_at: { type: Number, default: () => Math.floor(Date.now() / 1000) }
-});
-const ServiceRequest = mongoose.model('ServiceRequest', serviceSchema);
-
-const bookingSchema = new mongoose.Schema({
-  _id: { type: String, default: () => uuidv4() },
-  user_id: { type: String, required: true },
-  facility: { type: String, required: true },
-  date: { type: String, required: true },
-  time_slot: { type: String, required: true },
-  status: { type: String, default: 'Confirmed', enum: ['Confirmed', 'Cancelled', 'Used', 'No-Show'] },
-  created_at: { type: Number, default: () => Math.floor(Date.now() / 1000) }
-});
-const Booking = mongoose.model('Booking', bookingSchema);
+// Booking and ServiceRequest schemas are imported from /models
 
 const lostFoundSchema = new mongoose.Schema({
   _id: { type: String, default: () => uuidv4() },
@@ -449,249 +427,12 @@ app.get('/api/profile', requireAuth, async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════════════
-// SERVICE REQUESTS
+// MODULAR ROUTES - SERVICE REQUESTS & BOOKINGS
 // ════════════════════════════════════════════════════════════════════
+app.use('/api/services', requireAuth, require('./routes/serviceRoutes'));
+app.use('/api/bookings', requireAuth, require('./routes/bookingRoutes'));
 
-app.post('/api/services', requireAuth, async (req, res) => {
-  const { category, description, priority } = req.body;
-  if (!category) return res.status(400).json({ error: 'Category required.' });
-  try {
-    const currentUser = await User.findById(req.session.userId);
-    const svc = new ServiceRequest({
-      userId: req.session.userId,
-      user_id: req.session.userId,
-      category,
-      description: description || '',
-      priority: priority || 'Normal',
-      block: currentUser?.block || '',
-      room: currentUser?.room || ''
-    });
-    await svc.save();
-
-    const user = await User.findById(req.session.userId);
-    if (user?.email) {
-      console.log("Booking user ID:", svc.user_id);
-      console.log("Fetched user email:", user.email);
-
-      await sendEmail(user.email, "Service Request Received", emailTemplate(
-        "Service Request Received", "#f39c12",
-        `Hello ${user.name},<br><br>Your service request has been submitted.<br><br>Category: ${category}<br>Description: ${description}<br>Priority: ${priority}<br><br>We will resolve it soon.<br><br>- Smart Stay`
-      ));
-
-      await sendEmail(process.env.ADMIN_EMAIL, "New Service Request", emailTemplate(
-        "New Service Request", "#f39c12",
-        `User: ${user.name}<br>Email: ${user.email}<br>Category: ${category}<br>Priority: ${priority}<br>Description: ${description}<br><br>- Smart Stay`
-      ));
-    }
-    res.json({ success: true, message: 'Service request submitted! Confirmation email sent.', id: svc._id });
-  } catch (err) { res.status(500).json({ error: 'Failed to submit.' }); }
-});
-
-app.get('/api/services', requireAuth, async (req, res) => {
-  try {
-    const isAdmin = req.session.userRole === 'admin';
-    let requests;
-    if (isAdmin) {
-      const svcs = await ServiceRequest.find().sort({ created_at: -1 }).lean();
-      const userIds = [...new Set(svcs.map(s => s.user_id))];
-      const users = await User.find({ _id: { $in: userIds } }).lean();
-      const userMap = {};
-      users.forEach(u => { userMap[u._id] = u; });
-      requests = svcs.map(s => ({ ...s, id: s._id, user_name: userMap[s.user_id]?.name || '—', user_email: userMap[s.user_id]?.email || '' }));
-    } else {
-      const svcs = await ServiceRequest.find({ user_id: req.session.userId }).sort({ created_at: -1 }).lean();
-      requests = svcs.map(s => ({ ...s, id: s._id }));
-    }
-    res.json({ requests });
-  } catch (err) { res.status(500).json({ error: 'DB error.' }); }
-});
-
-app.patch('/api/services/:id', requireAuth, async (req, res) => {
-  if (req.session.userRole !== 'admin') return res.status(403).json({ error: 'Admin only.' });
-  const { status } = req.body;
-  try {
-    const updatedService = await ServiceRequest.findByIdAndUpdate(req.params.id, { status, updated_at: Math.floor(Date.now() / 1000) }, { new: true });
-    
-    if (updatedService) {
-      const user = await User.findById(updatedService.user_id);
-      if (user && user.email) {
-        console.log("Booking user ID:", updatedService.user_id);
-        console.log("Fetched user email:", user.email);
-        
-        await sendEmail(
-          user.email,
-          "Service Request Update",
-          emailTemplate(
-            "Service Request Updated",
-            "#f39c12",
-            `<table border="1" cellpadding="10">
-              <tr><td>Status</td><td>${status}</td></tr>
-              <tr><td>Category</td><td>${updatedService.category}</td></tr>
-            </table>`
-          )
-        );
-
-        await sendEmail(
-          process.env.ADMIN_EMAIL,
-          "Service Request Updated (Admin)",
-          emailTemplate(
-            "Service Request Updated",
-            "#f39c12",
-            `<table border="1" cellpadding="10">
-              <tr><td>User</td><td>${user.name}</td></tr>
-              <tr><td>Status</td><td>${status}</td></tr>
-            </table>`
-          )
-        );
-      }
-    }
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: 'Update failed.' }); }
-});
-
-// ════════════════════════════════════════════════════════════════════
-// FACILITY BOOKINGS
-// ════════════════════════════════════════════════════════════════════
-
-app.post('/api/bookings', requireAuth, async (req, res) => {
-  const { facility, date, time_slot } = req.body;
-  if (!facility || !date || !time_slot) return res.status(400).json({ error: 'All fields required.' });
-
-  const today = new Date().toISOString().split('T')[0];
-  if (date < today) return res.status(400).json({ error: 'Cannot book in the past.' });
-
-  try {
-    console.log("Booking route hit");
-    const user = await User.findById(req.session.userId);
-    if (!user) return res.status(404).json({ error: 'User not found.' });
-    if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
-    if (user.isBlocked) return res.status(403).json({ error: 'Booking disabled due to low reliability score' });
-
-    const existing = await Booking.findOne({ facility, date, time_slot, status: 'Confirmed' });
-    if (existing) return res.status(409).json({ error: 'This slot is already booked. Choose another time.' });
-
-    const booking = new Booking({
-      userId: req.session.userId,
-      user_id: req.session.userId,
-      facility,
-      date,
-      time_slot
-    });
-    await booking.save();
-
-    user.totalBookings = (user.totalBookings || 0) + 1;
-    await user.save();
-
-    const freshUser = await User.findById(req.session.userId);
-    if (freshUser?.email) {
-      console.log("Booking user ID:", booking.user_id);
-      console.log("Fetched user email:", freshUser.email);
-      const htmlUser = `Hello ${freshUser.name},<br><br>Your booking has been confirmed.<br><br>Facility: ${facility}<br>Date: ${date}<br>Time: ${time_slot}<br><br>- Smart Stay`;
-      await sendEmail(freshUser.email, "Booking Confirmed", emailTemplate("Booking Confirmed", "#27ae60", htmlUser));
-      
-      const htmlAdmin = `User: ${freshUser.name}<br>Email: ${freshUser.email}<br>Facility: ${facility}<br>Date: ${date}<br>Time: ${time_slot}<br><br>- Smart Stay`;
-      await sendEmail(process.env.ADMIN_EMAIL, "Booking Confirmed", emailTemplate("Booking Confirmed", "#27ae60", htmlAdmin));
-    }
-    res.json({ success: true, message: `${facility} booked for ${date} at ${time_slot}! Confirmation sent.`, id: booking._id });
-  } catch (err) { res.status(500).json({ error: 'Booking failed.' }); }
-});
-
-app.get('/api/bookings', requireAuth, async (req, res) => {
-  try {
-    const isAdmin = req.session.userRole === 'admin';
-    let bookings;
-    if (isAdmin) {
-      const bks = await Booking.find().sort({ date: -1 }).lean();
-      const userIds = [...new Set(bks.map(b => b.user_id))];
-      const users = await User.find({ _id: { $in: userIds } }).lean();
-      const userMap = {};
-      users.forEach(u => { userMap[u._id] = u; });
-      bookings = bks.map(b => {
-        const u = userMap[b.user_id];
-        if (u && u.rating === undefined) { u.rating = 5.0; u.totalBookings = 0; u.cancelledBookings = 0; u.noShows = 0; u.isBlocked = false; }
-        return {
-          ...b,
-          id: b._id,
-          user_name: u?.name || '—',
-          user_rating: u?.rating,
-          user_totalBookings: u?.totalBookings,
-          user_cancelledBookings: u?.cancelledBookings,
-          user_noShows: u?.noShows,
-          user_isBlocked: u?.isBlocked
-        };
-      });
-    } else {
-      const bks = await Booking.find({ user_id: req.session.userId }).sort({ date: -1 }).lean();
-      bookings = bks.map(b => ({ ...b, id: b._id }));
-    }
-    res.json({ bookings });
-  } catch (err) { res.status(500).json({ error: 'DB error.' }); }
-});
-
-app.delete('/api/bookings/:id', requireAuth, async (req, res) => {
-  try {
-    console.log("Cancel route hit");
-    let booking;
-    if (req.session.userRole === 'admin') {
-      booking = await Booking.findById(req.params.id);
-    } else {
-      booking = await Booking.findOne({ _id: req.params.id, user_id: req.session.userId });
-    }
-    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
-
-    booking.status = 'Cancelled';
-    await booking.save();
-
-    const user = await User.findById(booking.user_id);
-    if (user) {
-      if (user.role === 'admin') {
-        // do nothing for admin
-      } else {
-        if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
-        user.cancelledBookings = (user.cancelledBookings || 0) + 1;
-        user.rating -= 0.5;
-        if (user.rating < 0) user.rating = 0;
-        if (user.rating < 3.0) user.isBlocked = true;
-        await user.save();
-      }
-    }
-    const freshUser = await User.findById(booking.user_id);
-    if (freshUser?.email) {
-      console.log("Booking user ID:", booking.user_id);
-      console.log("Fetched user email:", freshUser.email);
-      const htmlCancel = `Your booking for ${booking.facility} on ${booking.date} at ${booking.time_slot} has been cancelled.<br><br>- Smart Stay`;
-      await sendEmail(freshUser.email, "Booking Cancelled", emailTemplate("Booking Cancelled", "#e74c3c", htmlCancel));
-      
-      const htmlAdmin = `User: ${freshUser.name}<br>Facility: ${booking.facility}<br>Date: ${booking.date}<br>Time: ${booking.time_slot}<br><br>- Smart Stay`;
-      await sendEmail(process.env.ADMIN_EMAIL, "Booking Cancelled", emailTemplate("Booking Cancelled", "#e74c3c", htmlAdmin));
-    }
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: 'Cancel failed.' }); }
-});
-
-// MARK AS USED
-app.patch('/api/bookings/:id/usage', requireAuth, async (req, res) => {
-  if (req.session.userRole !== 'admin') return res.status(403).json({ error: 'Admin only.' });
-  try {
-    const booking = await Booking.findById(req.params.id);
-    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
-    
-    booking.status = 'Used';
-    await booking.save();
-
-    const user = await User.findById(booking.user_id);
-    if (user) {
-      if (user.role === 'admin') return res.json({ success: true });
-      if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
-      user.rating += 0.2;
-      if (user.rating > 5) user.rating = 5.0;
-      await user.save();
-    }
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: 'Usage update failed.' }); }
-});
-
-// ADMIN UNBLOCK
+// ── Admin Unblock Endpoint (kept from legacy bookings) ──
 app.patch('/api/admin/users/:id/unblock', requireAuth, async (req, res) => {
   if (req.session.userRole !== 'admin') return res.status(403).json({ error: 'Admin only.' });
   try {
@@ -980,50 +721,6 @@ app.get('/api/admin/stats', requireAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Stats error.' }); }
 });
 
-// ════════════════════════════════════════════════════════════════════
-// BACKGROUND JOBS
-// ════════════════════════════════════════════════════════════════════
-
-setInterval(async () => {
-  try {
-    const confirmedBookings = await Booking.find({ status: 'Confirmed' });
-    const now = new Date();
-
-    for (const bk of confirmedBookings) {
-      if (!bk.time_slot || !bk.date) continue;
-      // time_slot format e.g., "09:00 AM - 10:00 AM"
-      const timeParts = bk.time_slot.split(/[-–]/);
-      if (timeParts.length < 2) continue;
-      // standardise the format, extract end time
-      const endTimeStr = timeParts[1].trim(); 
-      // Parse endTimeStr + bk.date into Date
-      const dateStr = bk.date; // "yyyy-mm-dd"
-      const dt = new Date(`${dateStr} ${endTimeStr}`);
-
-      // If valid date and current time > end time + 15 mins
-      if (!isNaN(dt.getTime())) {
-        const threshold = new Date(dt.getTime() + 15 * 60 * 1000);
-        if (now > threshold) {
-          bk.status = 'No-Show';
-          await bk.save();
-
-          const user = await User.findById(bk.user_id);
-          if (user) {
-            if (user.role === 'admin') continue;
-            if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
-            user.noShows = (user.noShows || 0) + 1;
-            user.rating -= 1.0;
-            if (user.rating < 0) user.rating = 0;
-            if (user.rating < 3.0) user.isBlocked = true;
-            await user.save();
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.error("No-Show Cron Error:", err);
-  }
-}, 15 * 60 * 1000); // Run every 15 minutes
 
 // ── Auto-open browser & Start ─────────────────────────────────────
 app.listen(PORT, () => {
