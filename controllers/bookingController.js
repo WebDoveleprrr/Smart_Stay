@@ -204,6 +204,7 @@ exports.reportBooking = async (req, res) => {
         booker.rating = Math.max(0, (booker.rating || 5.0) - 0.5);
         if (booker.rating < 3.0) booker.isBlocked = true;
         await booker.save();
+        await sendEmail(booker.email, "Booking Cancelled via Reports", emailTemplate("Booking Auto-Cancelled", "#dc2626", `Hello ${booker.name},<br><br>Your active booking for ${booking.facility} was automatically cancelled because multiple users reported that the facility was completely empty.<br><br>Your reliability rating has decreased by 0.5.<br><b>New Rating: ${booker.rating.toFixed(1)}/5.0</b>`));
       }
     } else {
       booking.status = 'under_review';
