@@ -49,7 +49,9 @@
       z-index: 1;
     }
 
-    input, select, button {
+    input,
+    select,
+    button {
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
@@ -359,14 +361,14 @@
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 24px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
       margin-bottom: 24px;
       transition: all 0.2s ease-in-out;
     }
 
     .card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
     }
 
     .card-title {
@@ -397,13 +399,13 @@
       display: flex;
       align-items: center;
       gap: 16px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
       transition: all 0.2s ease-in-out;
     }
 
     .stat-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
     }
 
     .stat-card .icon-wrap {
@@ -525,7 +527,7 @@
 
     .btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
     }
 
     .btn-danger {
@@ -914,7 +916,8 @@
 
     @media (max-width: 768px) {
       .sidebar {
-        width: 60px;   /* shrink sidebar */
+        width: 60px;
+        /* shrink sidebar */
       }
 
       .main-content {
@@ -932,304 +935,314 @@
 
 <body>
   <header class="global-header">
-    <div class="header-branding" onclick="window.location.href='/dashboard.html'" style="cursor:pointer; display:flex; align-items:center; gap:10px;" title="Overview">
+    <div class="header-branding" onclick="window.location.href='/dashboard.html'"
+      style="cursor:pointer; display:flex; align-items:center; gap:10px;" title="Overview">
       <div class="logo-icon" style="width:32px; height:32px; font-size:1.1rem; border-radius:8px;">🏨</div>
       <div class="global-logo">Smart<span>Stay</span></div>
     </div>
     <div class="top-badge">🏨 Student Portal</div>
   </header>
   <div class="layout-wrapper">
-  <div class="sidebar">
-    <nav class="nav">
-      <div class="nav-section">Main</div>
-      <button class="nav-item active" onclick="showPage('overview',this)"><span class="icon">🏠</span> Overview</button>
-      <div class="nav-section">Services</div>
-      <button class="nav-item" onclick="showPage('services',this)"><span class="icon">🔧</span> Service
-        Requests</button>
-      <button class="nav-item" onclick="showPage('facilities',this)"><span class="icon">🏋️</span> Facility
-        Booking</button>
-      <button class="nav-item" onclick="showPage('lostfound',this)"><span class="icon">🔍</span> Lost &amp;
-        Found</button>
-      <div class="nav-section">Account</div>
-      <button class="nav-item" onclick="showPage('profile',this);loadProfile()"><span class="icon">👤</span> My
-        Profile</button>
-    </nav>
-    <div class="sidebar-footer">
-      <div class="user-chip">
-        <div class="avatar" id="avatarInit">?</div>
-        <div class="user-info-sm">
-          <div class="name" id="sidebarName">Loading…</div>
-          <div class="role">Student</div>
+    <div class="sidebar">
+      <nav class="nav">
+        <div class="nav-section">Main</div>
+        <button class="nav-item active" onclick="showPage('overview',this)"><span class="icon">🏠</span>
+          Overview</button>
+        <div class="nav-section">Services</div>
+        <button class="nav-item" onclick="showPage('services',this)"><span class="icon">🔧</span> Service
+          Requests</button>
+        <button class="nav-item" onclick="showPage('facilities',this)"><span class="icon">🏋️</span> Facility
+          Booking</button>
+        <button class="nav-item" onclick="showPage('lostfound',this)"><span class="icon">🔍</span> Lost &amp;
+          Found</button>
+        <div class="nav-section">Account</div>
+        <button class="nav-item" onclick="showPage('profile',this);loadProfile()"><span class="icon">👤</span> My
+          Profile</button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-chip">
+          <div class="avatar" id="avatarInit">?</div>
+          <div class="user-info-sm">
+            <div class="name" id="sidebarName">Loading…</div>
+            <div class="role">Student</div>
+          </div>
         </div>
-      </div>
-      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
-    </div>
-  </div>
-
-  <div class="main">
-    <div class="topbar">
-      <div class="topbar-left">
-        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-        <div>
-          <div class="page-title"><span class="page-title-icon" id="topIcon">🏠</span><span
-              id="topTitle">Overview</span></div>
-          <div class="breadcrumb">Smart Stay / <span id="topBread">Dashboard</span></div>
-        </div>
+        <button class="logout-btn" onclick="doLogout()">Sign Out</button>
       </div>
     </div>
-    <div class="content">
 
-      <!-- OVERVIEW -->
-      <div class="page active" id="page-overview">
-        <!-- MOD 7: 4 stat cards -->
-        <div class="stats-grid">
-          <div class="stat-card" data-icon="🔧">
-            <div class="stat-lbl">My Requests</div>
-            <div class="stat-num" id="s-req">—</div>
-          </div>
-          <div class="stat-card" data-icon="🏋️">
-            <div class="stat-lbl">Bookings</div>
-            <div class="stat-num" id="s-book">—</div>
-          </div>
-          <div class="stat-card" data-icon="🔍">
-            <div class="stat-lbl">Lost Items</div>
-            <div class="stat-num" id="s-lost">—</div>
-          </div>
-          <div class="stat-card" data-icon="📦">
-            <div class="stat-lbl">Found Items</div>
-            <div class="stat-num" id="s-found">—</div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-          <div class="card">
-            <div class="card-title">Quick Actions</div>
-            <div class="card-sub">Jump into what you need</div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
-              <button class="btn" style="text-align:left; background:var(--amber)"
-                onclick="showPage('services',document.querySelectorAll('.nav-item')[1])">🔧 &nbsp;New Service
-                Request</button>
-              <button class="btn" style="text-align:left; background:var(--success)"
-                onclick="showPage('facilities',document.querySelectorAll('.nav-item')[2])">🏋️ &nbsp;Book a
-                Facility</button>
-              <button class="btn" style="text-align:left; background:#6b7280"
-                onclick="showPage('lostfound',document.querySelectorAll('.nav-item')[3])">🔍 &nbsp;Report
-                Lost/Found</button>
-            </div>
-          </div>
-          <!-- MOD 8: Recent Activity with two sections: Service Requests & Facility Bookings -->
-          <div class="card">
-            <div class="card-title">Recent Activity</div>
-            <div class="card-sub">Your latest requests and bookings</div>
-            <div id="recentActivity" style="font-size:0.84rem;color:var(--muted)">Loading…</div>
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+          <div>
+            <div class="page-title"><span class="page-title-icon" id="topIcon">🏠</span><span
+                id="topTitle">Overview</span></div>
+            <div class="breadcrumb">Smart Stay / <span id="topBread">Dashboard</span></div>
           </div>
         </div>
       </div>
+      <div class="content">
 
-      <!-- SERVICES -->
-      <div class="page" id="page-services">
-        <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:20px;">
-          <div class="card">
-            <div class="card-title">New Service Request</div>
-            <div class="card-sub">Pick a category and describe the issue</div>
-            <div class="msg" id="srvMsg"></div>
-            <label>Select Category</label>
-            <div class="service-grid">
-              <div class="service-card" onclick="selectService(this,'Electrician')">
-                <div class="s-icon">⚡</div>
-                <div class="s-name">Electrician</div>
-                <div class="s-desc">Wiring, switches</div>
-              </div>
-              <div class="service-card" onclick="selectService(this,'Plumber')">
-                <div class="s-icon">🔩</div>
-                <div class="s-name">Plumber</div>
-                <div class="s-desc">Pipes, taps</div>
-              </div>
-              <div class="service-card" onclick="selectService(this,'Cleaning')">
-                <div class="s-icon">🧹</div>
-                <div class="s-name">Cleaning</div>
-                <div class="s-desc">Room, corridor</div>
-              </div>
-              <div class="service-card" onclick="selectService(this,'Laundry')">
-                <div class="s-icon">👕</div>
-                <div class="s-name">Laundry</div>
-                <div class="s-desc">Washing service</div>
-              </div>
-              <div class="service-card" onclick="selectService(this,'Carpenter')">
-                <div class="s-icon">🪚</div>
-                <div class="s-name">Carpenter</div>
-                <div class="s-desc">Furniture</div>
-              </div>
-              <div class="service-card" onclick="selectService(this,'Other')">
-                <div class="s-icon">⚙️</div>
-                <div class="s-name">Other</div>
-                <div class="s-desc">Any issue</div>
+        <!-- OVERVIEW -->
+        <div class="page active" id="page-overview">
+          <!-- MOD 7: 4 stat cards -->
+          <div class="stats-grid">
+            <div class="stat-card" data-icon="🔧">
+              <div class="stat-lbl">My Requests</div>
+              <div class="stat-num" id="s-req">—</div>
+            </div>
+            <div class="stat-card" data-icon="🏋️">
+              <div class="stat-lbl">Bookings</div>
+              <div class="stat-num" id="s-book">—</div>
+            </div>
+            <div class="stat-card" data-icon="🔍">
+              <div class="stat-lbl">Lost Items</div>
+              <div class="stat-num" id="s-lost">—</div>
+            </div>
+            <div class="stat-card" data-icon="📦">
+              <div class="stat-lbl">Found Items</div>
+              <div class="stat-num" id="s-found">—</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+            <div class="card">
+              <div class="card-title">Quick Actions</div>
+              <div class="card-sub">Jump into what you need</div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <button class="btn" style="text-align:left; background:var(--amber)"
+                  onclick="showPage('services',document.querySelectorAll('.nav-item')[1])">🔧 &nbsp;New Service
+                  Request</button>
+                <button class="btn" style="text-align:left; background:var(--success)"
+                  onclick="showPage('facilities',document.querySelectorAll('.nav-item')[2])">🏋️ &nbsp;Book a
+                  Facility</button>
+                <button class="btn" style="text-align:left; background:#6b7280"
+                  onclick="showPage('lostfound',document.querySelectorAll('.nav-item')[3])">🔍 &nbsp;Report
+                  Lost/Found</button>
               </div>
             </div>
-            <div class="field"><label>Priority</label><select id="srvPriority">
-                <option value="Normal">Normal</option>
-                <option value="High">High</option>
-                <option value="Urgent">Urgent</option>
-              </select></div>
-            <div class="field"><label>Description</label><textarea id="srvDesc"
-                placeholder="Describe the issue in detail…"></textarea></div>
-            <button class="btn" onclick="submitService()">Submit Request</button>
-          </div>
-          <div class="card">
-            <div class="card-title">My Requests</div>
-            <div class="card-sub">Track the status of your requests</div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Category</th>
-                    <th>Description</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody id="srvTable">
-                  <tr>
-                    <td colspan="5" style="text-align:center;color:var(--muted);padding:30px">Loading…</td>
-                  </tr>
-                </tbody>
-              </table>
+            <!-- MOD 8: Recent Activity with two sections: Service Requests & Facility Bookings -->
+            <div class="card">
+              <div class="card-title">Recent Activity</div>
+              <div class="card-sub">Your latest requests and bookings</div>
+              <div id="recentActivity" style="font-size:0.84rem;color:var(--muted)">Loading…</div>
             </div>
           </div>
         </div>
+
+        <!-- SERVICES -->
+        <div class="page" id="page-services">
+          <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:20px;">
+            <div class="card">
+              <div class="card-title">New Service Request</div>
+              <div class="card-sub">Pick a category and describe the issue</div>
+              <div class="msg" id="srvMsg"></div>
+              <label>Select Category</label>
+              <div class="service-grid">
+                <div class="service-card" onclick="selectService(this,'Electrician')">
+                  <div class="s-icon">⚡</div>
+                  <div class="s-name">Electrician</div>
+                  <div class="s-desc">Wiring, switches</div>
+                </div>
+                <div class="service-card" onclick="selectService(this,'Plumber')">
+                  <div class="s-icon">🔩</div>
+                  <div class="s-name">Plumber</div>
+                  <div class="s-desc">Pipes, taps</div>
+                </div>
+                <div class="service-card" onclick="selectService(this,'Cleaning')">
+                  <div class="s-icon">🧹</div>
+                  <div class="s-name">Cleaning</div>
+                  <div class="s-desc">Room, corridor</div>
+                </div>
+                <div class="service-card" onclick="selectService(this,'Laundry')">
+                  <div class="s-icon">👕</div>
+                  <div class="s-name">Laundry</div>
+                  <div class="s-desc">Washing service</div>
+                </div>
+                <div class="service-card" onclick="selectService(this,'Carpenter')">
+                  <div class="s-icon">🪚</div>
+                  <div class="s-name">Carpenter</div>
+                  <div class="s-desc">Furniture</div>
+                </div>
+                <div class="service-card" onclick="selectService(this,'Other')">
+                  <div class="s-icon">⚙️</div>
+                  <div class="s-name">Other</div>
+                  <div class="s-desc">Any issue</div>
+                </div>
+              </div>
+              <div class="field"><label>Priority</label><select id="srvPriority">
+                  <option value="Normal">Normal</option>
+                  <option value="High">High</option>
+                  <option value="Urgent">Urgent</option>
+                </select></div>
+              <div class="field"><label>Description</label><textarea id="srvDesc"
+                  placeholder="Describe the issue in detail…"></textarea></div>
+              <button class="btn" onclick="submitService()">Submit Request</button>
+            </div>
+            <div class="card">
+              <div class="card-title">My Requests</div>
+              <div class="card-sub">Track the status of your requests</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Description</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody id="srvTable">
+                    <tr>
+                      <td colspan="5" style="text-align:center;color:var(--muted);padding:30px">Loading…</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FACILITIES -->
+        <div class="page" id="page-facilities">
+          <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:20px;">
+            <div class="card">
+              <div class="card-title">Book a Facility</div>
+              <div class="card-sub">Reserve your slot instantly</div>
+              <div class="msg" id="facMsg"></div>
+              <label>Choose Facility</label>
+              <div class="fac-btns">
+                <button class="fac-btn" onclick="selectFacility(this,'Gym')">🏋️ Gym</button>
+                <button class="fac-btn" onclick="selectFacility(this,'Table Tennis')">🏓 Table Tennis</button>
+                <button class="fac-btn" onclick="selectFacility(this,'Study Hall')">📚 Study Hall</button>
+                <button class="fac-btn" onclick="selectFacility(this,'Badminton')">🏸 Badminton</button>
+                <button class="fac-btn" onclick="selectFacility(this,'TV Room')">📺 TV Room</button>
+              </div>
+              <div class="field"><label>Date</label><input type="date" id="facDate" /></div>
+              <div class="field">
+                <label>Time Slot</label>
+                <div class="slots-grid">
+                  <button class="slot-btn" onclick="selectSlot(this,'6:00–7:00 AM')">6–7 AM</button>
+                  <button class="slot-btn" onclick="selectSlot(this,'7:00–8:00 AM')">7–8 AM</button>
+                  <button class="slot-btn" onclick="selectSlot(this,'8:00–9:00 AM')">8–9 AM</button>
+                  <button class="slot-btn" onclick="selectSlot(this,'5:00–6:00 PM')">5–6 PM</button>
+                  <button class="slot-btn" onclick="selectSlot(this,'6:00–7:00 PM')">6–7 PM</button>
+                  <button class="slot-btn" onclick="selectSlot(this,'7:00–8:00 PM')">7–8 PM</button>
+                  <button class="slot-btn" onclick="selectSlot(this,'8:00–9:00 PM')">8–9 PM</button>
+                  <button class="slot-btn" onclick="selectSlot(this,'9:00–10:00 PM')">9–10 PM</button>
+                </div>
+              </div>
+              <button class="btn" onclick="submitBooking()" style="margin-top:10px">Confirm Booking</button>
+            </div>
+            <div class="card">
+              <div class="card-title">My Bookings</div>
+              <div class="card-sub">Your upcoming reservations</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Facility</th>
+                      <th>Date</th>
+                      <th>Slot</th>
+                      <th>Status</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="bookTable">
+                    <tr>
+                      <td colspan="5" style="text-align:center;color:var(--muted);padding:30px">Loading…</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOST & FOUND -->
+        <div class="page" id="page-lostfound">
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-title">Lost & Found Reports</div>
+            <div class="card-sub">Submit a lost item or report something you found</div>
+          </div>
+          <div class="lf-layout">
+            <div class="card" style="padding: 24px">
+              <div class="case-num">CASE #<span id="caseNum">----</span> | <span id="caseDate">--/--/----</span></div>
+              <div class="msg" id="lfMsg"></div>
+              <div class="field"><label>Incident Type</label>
+                <select id="lfType">
+                  <option value="Lost">LOST — Item Missing</option>
+                  <option value="Found">FOUND — Item Recovered</option>
+                </select>
+              </div>
+              <div class="field"><label>Item Description</label><input type="text" id="lfName"
+                  placeholder="e.g., Blue backpack, Keys…" /></div>
+              <div class="field"><label>Additional Details</label><textarea id="lfDesc"
+                  placeholder="Color, brand, distinguishing marks…" rows="3"></textarea></div>
+              <div class="field"><label>Last Known Location</label><input type="text" id="lfLocation"
+                  placeholder="Near Block A canteen…" /></div>
+              <div class="field"><label>Evidence Photo</label>
+                <div class="upload-zone" onclick="document.getElementById('imageInput').click()">
+                  <input type="file" id="imageInput" accept="image/*" onchange="previewLF(event)" />
+                  📷 Attach photo evidence<br><small style="opacity:0.7">JPEG / PNG, max 5MB</small>
+                  <img id="previewImage" class="preview-img" style="display:none;" src="" alt="" />
+                </div>
+              </div>
+              <button class="btn" style="width:100%" onclick="submitLF()">File Report</button>
+            </div>
+            <div class="card" style="padding: 24px;">
+              <div class="board-header">
+                <div class="card-title" style="margin: 0; font-size: 1rem;">Evidence Board</div>
+                <div class="board-filters">
+                  <button class="bfilter active" onclick="filterLF('all',this)">ALL</button>
+                  <button class="bfilter" onclick="filterLF('Lost',this)">LOST</button>
+                  <button class="bfilter" onclick="filterLF('Found',this)">FOUND</button>
+                </div>
+              </div>
+              <div class="pins-grid" id="lfGrid">
+                <div class="no-pins">// NO CASES ON BOARD //</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI MATCH MODAL -->
+        <div id="matchModal"
+          style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2000; align-items:center; justify-content:center;">
+          <div
+            style="background:var(--surface); padding:24px; border-radius:12px; width:90%; max-width:550px; box-shadow:0 8px 30px rgba(0,0,0,0.3);">
+            <h3
+              style="margin-top:0; color:var(--text); display:flex; justify-content:space-between; align-items:center;">
+              <span>🤖 AI Confidence Matches</span>
+              <button onclick="document.getElementById('matchModal').style.display='none'"
+                style="background:none;border:none;cursor:pointer;font-size:1.5rem;color:var(--text);">&times;</button>
+            </h3>
+            <div style="font-size:0.9rem; color:var(--muted); margin-bottom:15px;">Our AI detected the following
+              potential matches for your reported item based on visual similarity.</div>
+            <div id="matchModalContent"
+              style="max-height:60vh; overflow-y:auto; margin:15px 0; display:flex; flex-direction:column; gap:12px;">
+            </div>
+            <div style="text-align:right;">
+              <button class="btn" style="background:var(--muted); border:none;"
+                onclick="document.getElementById('matchModal').style.display='none'">Dismiss</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROFILE -->
+        <div class="page" id="page-profile">
+          <div style="max-width:480px;">
+            <div class="card">
+              <div class="card-title">My Profile</div>
+              <div class="card-sub">Your hostel account details</div>
+              <div id="profileContent" style="font-size:0.88rem">Loading…</div>
+            </div>
+          </div>
+        </div>
+
       </div>
-
-      <!-- FACILITIES -->
-      <div class="page" id="page-facilities">
-        <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:20px;">
-          <div class="card">
-            <div class="card-title">Book a Facility</div>
-            <div class="card-sub">Reserve your slot instantly</div>
-            <div class="msg" id="facMsg"></div>
-            <label>Choose Facility</label>
-            <div class="fac-btns">
-              <button class="fac-btn" onclick="selectFacility(this,'Gym')">🏋️ Gym</button>
-              <button class="fac-btn" onclick="selectFacility(this,'Table Tennis')">🏓 Table Tennis</button>
-              <button class="fac-btn" onclick="selectFacility(this,'Study Hall')">📚 Study Hall</button>
-              <button class="fac-btn" onclick="selectFacility(this,'Badminton')">🏸 Badminton</button>
-              <button class="fac-btn" onclick="selectFacility(this,'TV Room')">📺 TV Room</button>
-            </div>
-            <div class="field"><label>Date</label><input type="date" id="facDate" /></div>
-            <div class="field">
-              <label>Time Slot</label>
-              <div class="slots-grid">
-                <button class="slot-btn" onclick="selectSlot(this,'6:00–7:00 AM')">6–7 AM</button>
-                <button class="slot-btn" onclick="selectSlot(this,'7:00–8:00 AM')">7–8 AM</button>
-                <button class="slot-btn" onclick="selectSlot(this,'8:00–9:00 AM')">8–9 AM</button>
-                <button class="slot-btn" onclick="selectSlot(this,'5:00–6:00 PM')">5–6 PM</button>
-                <button class="slot-btn" onclick="selectSlot(this,'6:00–7:00 PM')">6–7 PM</button>
-                <button class="slot-btn" onclick="selectSlot(this,'7:00–8:00 PM')">7–8 PM</button>
-                <button class="slot-btn" onclick="selectSlot(this,'8:00–9:00 PM')">8–9 PM</button>
-                <button class="slot-btn" onclick="selectSlot(this,'9:00–10:00 PM')">9–10 PM</button>
-              </div>
-            </div>
-            <button class="btn" onclick="submitBooking()" style="margin-top:10px">Confirm Booking</button>
-          </div>
-          <div class="card">
-            <div class="card-title">My Bookings</div>
-            <div class="card-sub">Your upcoming reservations</div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Facility</th>
-                    <th>Date</th>
-                    <th>Slot</th>
-                    <th>Status</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="bookTable">
-                  <tr>
-                    <td colspan="5" style="text-align:center;color:var(--muted);padding:30px">Loading…</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- LOST & FOUND -->
-      <div class="page" id="page-lostfound">
-        <div class="card" style="margin-bottom: 20px;">
-          <div class="card-title">Lost & Found Reports</div>
-          <div class="card-sub">Submit a lost item or report something you found</div>
-        </div>
-        <div class="lf-layout">
-          <div class="card" style="padding: 24px">
-            <div class="case-num">CASE #<span id="caseNum">----</span> | <span id="caseDate">--/--/----</span></div>
-            <div class="msg" id="lfMsg"></div>
-            <div class="field"><label>Incident Type</label>
-              <select id="lfType">
-                <option value="Lost">LOST — Item Missing</option>
-                <option value="Found">FOUND — Item Recovered</option>
-              </select>
-            </div>
-            <div class="field"><label>Item Description</label><input type="text" id="lfName"
-                placeholder="e.g., Blue backpack, Keys…" /></div>
-            <div class="field"><label>Additional Details</label><textarea id="lfDesc"
-                placeholder="Color, brand, distinguishing marks…" rows="3"></textarea></div>
-            <div class="field"><label>Last Known Location</label><input type="text" id="lfLocation"
-                placeholder="Near Block A canteen…" /></div>
-            <div class="field"><label>Evidence Photo</label>
-              <div class="upload-zone" onclick="document.getElementById('imageInput').click()">
-                <input type="file" id="imageInput" accept="image/*" onchange="previewLF(event)" />
-                📷 Attach photo evidence<br><small style="opacity:0.7">JPEG / PNG, max 5MB</small>
-                <img id="previewImage" class="preview-img" style="display:none;" src="" alt="" />
-              </div>
-            </div>
-            <button class="btn" style="width:100%" onclick="submitLF()">File Report</button>
-          </div>
-          <div class="card" style="padding: 24px;">
-            <div class="board-header">
-              <div class="card-title" style="margin: 0; font-size: 1rem;">Evidence Board</div>
-              <div class="board-filters">
-                <button class="bfilter active" onclick="filterLF('all',this)">ALL</button>
-                <button class="bfilter" onclick="filterLF('Lost',this)">LOST</button>
-                <button class="bfilter" onclick="filterLF('Found',this)">FOUND</button>
-              </div>
-            </div>
-            <div class="pins-grid" id="lfGrid">
-              <div class="no-pins">// NO CASES ON BOARD //</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- AI MATCH MODAL -->
-      <div id="matchModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2000; align-items:center; justify-content:center;">
-        <div style="background:var(--surface); padding:24px; border-radius:12px; width:90%; max-width:550px; box-shadow:0 8px 30px rgba(0,0,0,0.3);">
-          <h3 style="margin-top:0; color:var(--text); display:flex; justify-content:space-between; align-items:center;">
-            <span>🤖 AI Confidence Matches</span>
-            <button onclick="document.getElementById('matchModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.5rem;color:var(--text);">&times;</button>
-          </h3>
-          <div style="font-size:0.9rem; color:var(--muted); margin-bottom:15px;">Our AI detected the following potential matches for your reported item based on visual similarity.</div>
-          <div id="matchModalContent" style="max-height:60vh; overflow-y:auto; margin:15px 0; display:flex; flex-direction:column; gap:12px;"></div>
-          <div style="text-align:right;">
-            <button class="btn" style="background:var(--muted); border:none;" onclick="document.getElementById('matchModal').style.display='none'">Dismiss</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- PROFILE -->
-      <div class="page" id="page-profile">
-        <div style="max-width:480px;">
-          <div class="card">
-            <div class="card-title">My Profile</div>
-            <div class="card-sub">Your hostel account details</div>
-            <div id="profileContent" style="font-size:0.88rem">Loading…</div>
-          </div>
-        </div>
-      </div>
-
     </div>
-  </div>
   </div>
 
   <script>
@@ -1271,7 +1284,7 @@
             if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.style.cursor = 'not-allowed'; }
           } else if (u.rating < 3.5) {
             facMsg.className = 'msg error show';
-            facMsg.textContent = `Warning: Your reliability score is low (${(u.rating||5).toFixed(1)}/5.0).`;
+            facMsg.textContent = `Warning: Your reliability score is low (${(u.rating || 5).toFixed(1)}/5.0).`;
           }
         }
       } catch (err) { console.error('Reliability load error', err); }
@@ -1381,7 +1394,7 @@
       if (!selectedFacility) return showMsg('facMsg', 'Select a facility.', 'error');
       const date = document.getElementById('facDate').value;
       if (!date) return showMsg('facMsg', 'Select a date.', 'error');
-      
+
       const today = new Date().toISOString().split('T')[0];
       if (date < today) return showMsg('facMsg', 'Cannot book a facility in the past.', 'error');
 
@@ -1390,7 +1403,7 @@
       const d = await res.json();
       if (d.error) return showMsg('facMsg', d.error, 'error');
       showMsg('facMsg', d.message, 'success');
-      
+
       // Reset selected fields
       document.getElementById('facDate').value = '';
       selectedFacility = '';
@@ -1450,9 +1463,9 @@
       if (!description) return showMsg('lfMsg', 'Item description required.', 'error');
       if (!location) return showMsg('lfMsg', 'Location is required.', 'error');
       if (!file) return showMsg('lfMsg', 'Image file is required.', 'error');
-      
+
       showMsg('lfMsg', 'Uploading & Finding matches...', 'success');
-      
+
       const formData = new FormData();
       formData.append("type", type);
       formData.append("description", description);
@@ -1471,29 +1484,30 @@
       } catch (err) {
         console.error("Upload failed:", err);
       }
-      
+
       if (!d || d.error) {
         return showMsg('lfMsg', d ? d.error : 'Failed to post.', 'error');
       }
-      
+
       showMsg('lfMsg', 'Analyzing image similarity...', 'success');
-      
+
       try {
-        const matchRes = await fetch('/api/match-image', { credentials: 'include',  
-            method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ id: d.id })
+        const matchRes = await fetch('/api/match-image', {
+          credentials: 'include',
+          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: d.id })
         });
         const mData = await matchRes.json();
-        
+
         if (mData.matches && mData.matches.length > 0) {
-            showMatchModal(d.id, mData.matches, mData.source_image_url);
-            showMsg('lfMsg', 'Matches found! Please review the modal.', 'success');
+          showMatchModal(d.id, mData.matches, mData.source_image_url);
+          showMsg('lfMsg', 'Matches found! Please review the modal.', 'success');
         } else {
-            showMsg('lfMsg', 'Report filed! Auto-matching done in background. Re-match later from the dashboard if needed.', 'success');
+          showMsg('lfMsg', 'Report filed! Auto-matching done in background. Re-match later from the dashboard if needed.', 'success');
         }
       } catch (e) {
-         console.warn("Match detection error:", e);
-         showMsg('lfMsg', d.message, 'success');
+        console.warn("Match detection error:", e);
+        showMsg('lfMsg', d.message, 'success');
       }
 
       document.getElementById('lfName').value = '';
@@ -1508,9 +1522,9 @@
     function showMatchModal(sourceId, matches, sourceImageUrl) {
       const mContent = document.getElementById('matchModalContent');
       mContent.innerHTML = matches.map(m => {
-          const simScore = (Math.max(m.score, 0.0) * 100).toFixed(1);
-          const isHigh = m.score >= 0.85;
-          return `
+        const simScore = (Math.max(m.score, 0.0) * 100).toFixed(1);
+        const isHigh = m.score >= 0.85;
+        return `
           <div style="border:1px solid ${isHigh ? 'var(--amber)' : 'var(--border)'}; padding:12px; border-radius:8px; display:flex; flex-direction:column; gap:8px; background:var(--surface2);">
             <div style="display:flex; gap:12px; align-items:center;">
                 <div style="flex:1; text-align:center;">
@@ -1546,31 +1560,32 @@
           </div>`;
       }).join('');
       document.getElementById('matchModal').style.display = 'flex';
-      
+
       if (matches[0] && matches[0].score >= 0.85) {
-          alert('High confidence match found! Please review the matches.');
+        alert('High confidence match found! Please review the matches.');
       }
     }
 
     async function confirmAIMatch(sourceId, targetId) {
-       if(!confirm('Are you sure you want to mark these items as a match? Both cases will be closed.')) return;
-       try {
-         const res = await fetch('/api/confirm-match', { credentials: 'include', 
-            method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ source_id: sourceId, target_id: targetId })
-         });
-         const d = await res.json();
-         if(d.error) {
-            alert(d.error);
-         } else {
-            alert('Match confirmed successfully!');
-            document.getElementById('matchModal').style.display = 'none';
-            loadLF(); loadOverview();
-         }
-       } catch(e) {
-         console.error(e);
-         alert("Error confirming match.");
-       }
+      if (!confirm('Are you sure you want to mark these items as a match? Both cases will be closed.')) return;
+      try {
+        const res = await fetch('/api/confirm-match', {
+          credentials: 'include',
+          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source_id: sourceId, target_id: targetId })
+        });
+        const d = await res.json();
+        if (d.error) {
+          alert(d.error);
+        } else {
+          alert('Match confirmed successfully!');
+          document.getElementById('matchModal').style.display = 'none';
+          loadLF(); loadOverview();
+        }
+      } catch (e) {
+        console.error(e);
+        alert("Error confirming match.");
+      }
     }
 
     async function loadLF() {
@@ -1616,23 +1631,24 @@
     }
 
     async function triggerMatch(id) {
-       document.getElementById('matchModalContent').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Analyzing images...</div>';
-       document.getElementById('matchModal').style.display = 'flex';
-       try {
-         const matchRes = await fetch('/api/match-image', { 
-            method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ id })
-         });
-         const mData = await matchRes.json();
-         if (mData.matches && mData.matches.length > 0) {
-            showMatchModal(id, mData.matches, mData.source_image_url);
-         } else {
-            document.getElementById('matchModalContent').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No matching items found.</div>';
-         }
-       } catch (e) {
-          document.getElementById('matchModalContent').innerHTML = '<div style="color:var(--rust); text-align:center; padding:20px;">Failed to find matches.</div>';
-       }
-    }
+      document.getElementById('matchModalContent').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Analyzing images...</div>';
+      document.getElementById('matchModal').style.display = 'flex';
+      try {
+        const matchRes = await fetch('/api/match-image', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const mData = await matchRes.json();
+        if (mData.matches && mData.matches.length > 0) {
+          showMatchModal(id, mData.matches, mData.source_image_url);
+        } else {
+          document.getElementById('matchModalContent').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No matching items found.</div>';
+        }
+      } catch (e) {
+        document.getElementById('matchModalContent').innerHTML = '<div style="color:var(--rust); text-align:center; padding:20px;">Failed to find matches.</div>';
+      }
     }
 
     async function loadProfile() {
