@@ -1276,7 +1276,7 @@
         document.body.classList.toggle('sidebar-collapsed');
       }
     }
-    let selectedCategory = '', selectedFacility = '', selectedSlot = '', lfItems = [];
+    let selectedCategory = '', selectedFacility = '', selectedSlot = '', lfItems = [], currentUserId = null;
     const tilts = ['−2deg', '1.5deg', '−1deg', '2deg', '−1.5deg', '0.8deg', '−0.5deg', '1.8deg'];
     const catIcons = { Electrician: '⚡', Plumber: '🔩', Cleaning: '🧹', Laundry: '👕', Carpenter: '🪚', Other: '⚙️' };
 
@@ -1284,6 +1284,7 @@
       if (!d.loggedIn) return window.location.href = '/login.html';
       document.getElementById('sidebarName').textContent = d.name;
       document.getElementById('avatarInit').textContent = d.name.charAt(0).toUpperCase();
+      currentUserId = d.userId;
       loadOverview(); loadServices(); loadBookings(); loadLF(); loadUserReliability(); loadActiveBookings();
       document.getElementById('facDate').min = new Date().toISOString().split('T')[0];
       document.getElementById('caseNum').textContent = String(Math.floor(Math.random() * 9000) + 1000);
@@ -1507,7 +1508,12 @@
         <td>${b.time_slot}</td>
         <td><span class="badge ${b.status === 'under_review' ? 'urgent' : 'confirmed'}">${b.status}</span></td>
         <td>
-          <button class="btn-danger" onclick="reportBooking('${b._id || b.id}')" style="background:#f59e0b; border:none; padding:4px 8px; font-size:0.75rem; cursor:pointer;">Report Empty</button>
+          ${b.user_id === currentUserId 
+              ? `<span style="font-size:0.75rem;color:var(--muted)">Your Booking</span>` 
+              : (b.reports && b.reports.some(r => r.userId === currentUserId))
+                  ? `<span style="font-size:0.75rem;color:var(--muted)">Reported</span>`
+                  : `<button class="btn-danger" onclick="reportBooking('${b._id || b.id}')" style="background:#f59e0b; border:none; padding:4px 8px; font-size:0.75rem; cursor:pointer;">Report Empty</button>`
+          }
         </td>
       </tr>`).join('')
           : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">No active bookings found</td></tr>';
