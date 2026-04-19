@@ -68,7 +68,7 @@ function emailTemplate(title, color, body) {
   </div>`;
 }
 
-async function await sendEmail(to, subject, htmlContent, attachments = []) {
+async function sendEmail(to, subject, htmlContent, attachments = []) {
   const msg = {
     to,
     from: process.env.EMAIL_USER || "brohitchowdary5@gmail.com",

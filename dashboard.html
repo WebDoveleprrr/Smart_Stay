@@ -1364,7 +1364,19 @@
       if (!selectedCategory) return showMsg('srvMsg', 'Please select a category.', 'error');
       const desc = document.getElementById('srvDesc').value.trim();
       const priority = document.getElementById('srvPriority').value;
-      const res = await fetch('/api/services', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: selectedCategory, description: desc, priority }) });
+      const severity = priority.toLowerCase() === 'urgent' ? 'high' : (priority.toLowerCase() === 'normal' ? 'low' : 'medium');
+      const res = await fetch('/api/services', { 
+         method: 'POST', credentials: 'include', 
+         headers: { 'Content-Type': 'application/json' }, 
+         body: JSON.stringify({ category: selectedCategory, description: desc, severity, location: 'Hostel' }) 
+      });
+      const d = await res.json();
+      if (d.error) return showMsg('srvMsg', d.error, 'error');
+      showMsg('srvMsg', d.message, 'success');
+      document.getElementById('srvDesc').value = ''; selectedCategory = '';
+      document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
+      loadServices(); loadOverview();
+    }, body: JSON.stringify({ category: selectedCategory, description: desc, priority }) });
       const d = await res.json();
       if (d.error) return showMsg('srvMsg', d.error, 'error');
       showMsg('srvMsg', d.message, 'success');
