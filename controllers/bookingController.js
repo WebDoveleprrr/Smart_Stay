@@ -234,9 +234,23 @@ exports.checkIn = async (req, res) => {
 
     booking.status = 'in_use';
     booking.checkInTime = new Date();
-    await booking.save();
 
     const User = getUserModel();
+
+    if (booking.reports && booking.reports.length > 0) {
+      for (const rep of booking.reports) {
+        const falseReporter = await User.findById(rep.userId);
+        if (falseReporter && falseReporter.role !== 'admin') {
+          falseReporter.rating = Math.max(0, (falseReporter.rating || 5.0) - 0.7);
+          await falseReporter.save();
+          await sendEmail(falseReporter.email, "False Report Penalty", emailTemplate("Premature False Report", "#ef4444", `Hello ${falseReporter.name},<br><br>You reported a facility booking as empty, but the legitimate booked user has officially checked into the facility.<br><br>Submitting false or premature reports abuses the automated booking system. As a strict penalty, your Smart Campus Reliability Rating has plummeted by 0.7.<br><br><b>New Rating: ${falseReporter.rating.toFixed(1)}/5.0</b>`));
+        }
+      }
+      booking.reports = [];
+    }
+
+    await booking.save();
+
     const bookedUser = await User.findById(booking.user_id);
     if (bookedUser) {
         await sendEmail(bookedUser.email, "Check-in Successful", emailTemplate("Checked In", "#3b82f6", `Hello ${bookedUser.name},<br><br>You have successfully checked into your booking for ${booking.facility}.`));
