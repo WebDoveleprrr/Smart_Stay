@@ -1360,6 +1360,33 @@
       el.classList.add('selected'); selectedCategory = name;
     }
 
+
+    async function reportNotUse(id) {
+      if (!confirm("Are you sure you want to report this booking? False reports decrease your rating.")) return;
+      try {
+        const res = await fetch('/api/bookings/report/' + id, { method: 'POST', credentials: 'include' });
+        const d = await res.json();
+        if (d.error) alert(d.error);
+        else {
+          alert('Report submitted successfully.');
+          loadActiveBookings();
+        }
+      } catch (e) { alert("Network error"); }
+    }
+
+    async function checkInBooking(id) {
+      try {
+        const res = await fetch('/api/bookings/checkin/' + id, { method: 'POST', credentials: 'include' });
+        const d = await res.json();
+        if (d.error) alert(d.error);
+        else {
+          alert('Checked in successfully!');
+          loadBookings();
+          loadActiveBookings();
+        }
+      } catch (e) { alert("Network error"); }
+    }
+
     async function submitService() {
       if (!selectedCategory) return showMsg('srvMsg', 'Please select a category.', 'error');
       const desc = document.getElementById('srvDesc').value.trim();

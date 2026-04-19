@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const getUserModel = () => mongoose.model('User');
 
 exports.createRequest = async (req, res) => {
+  console.log("[Service POST]", req.body);
   const { category, description, severity, location, title } = req.body;
   if (!category || !location) return res.status(400).json({ error: 'Category and location required.' });
 
