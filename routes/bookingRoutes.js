@@ -8,7 +8,7 @@ const bookingController = require('../controllers/bookingController');
 // app.use('/api/bookings', requireAuth, bookingRoutes);
 
 router.post('/', bookingController.createBooking);
-router.get('/all-active', requireAuth, bookingController.getAllActiveBookings);
+router.get('/all-active', bookingController.getAllActiveBookings);
 router.get('/', bookingController.getBookings);
 router.delete('/:id', bookingController.deleteBooking);
 
