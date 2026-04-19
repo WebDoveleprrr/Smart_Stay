@@ -877,7 +877,6 @@
       <td style="font-size:0.85rem">${b.date}<br/>${b.time_slot}</td>
       <td><span class="badge ${['booked', 'under_review'].includes(b.status) ? 'confirmed' : b.status === 'cancelled' ? 'urgent' : b.status === 'completed' ? 'resolved' : 'progress'}">${b.status}</span></td>
       <td style="display:flex;gap:8px;flex-wrap:wrap;">
-        ${['booked', 'in_use', 'under_review'].includes(b.status) ? `<button class="cancel-btn" onclick="cancelBook('${b._id || b.id}')">Cancel</button>` : ''}
         ${['booked', 'in_use', 'under_review'].includes(b.status) ? `<button class="cancel-btn" style="background:var(--success);" onclick="markUsed('${b._id || b.id}')">Mark Used</button>` : ''}
         ${b.status === 'completed' ? `<button class="cancel-btn" style="background:var(--muted); opacity:0.5; cursor:not-allowed;" disabled>Used</button>` : ''}
         ${b.user_isBlocked ? `<button class="cancel-btn" style="background:var(--amber);" onclick="unblockUser('${b.user_owner_id || b.user_id}')">Unblock User</button>` : ''}
