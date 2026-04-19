@@ -464,7 +464,11 @@ app.post("/api/lost-found", requireAuth, upload.any(), async (req, res) => {
     itemObj.id = itemObj._id;
     
     const owner = await User.findById(req.session.userId);
-    if (owner) await sendEmail(owner.email, "Item Registered", emailTemplate("Lost & Found Item Registered", "#6366f1", `Hello ${owner.name},<br><br>Your item <b>${req.body.description || 'Unknown'}</b> has been successfully registered in the system.`));
+    if (owner) {
+       await sendEmail(owner.email, "Item Registered", emailTemplate("Lost & Found Item Registered", "#6366f1", `Hello ${owner.name},<br><br>Your item <b>${req.body.description || 'Unknown'}</b> has been successfully registered in the system.`));
+       
+       await sendEmail(ADMIN_EMAIL || process.env.ADMIN_EMAIL || "bikkinarohitchowdary@gmail.com", "New Lost/Found Item Reoprted", emailTemplate("Lost/Found Item", "#6366f1", `A new ${req.body.type} item was reported by ${owner.name}.<br>Description: ${req.body.description || 'Unknown'}<br>Location: ${req.body.location}`));
+    }
     
     res.status(200).json(itemObj);
 
@@ -621,6 +625,8 @@ app.post('/api/confirm-match', requireAuth, async (req, res) => {
 
     sendMatchEmails(sOwner, source, target.item_name);
     sendMatchEmails(tOwner, target, source.item_name);
+
+    await sendEmail(ADMIN_EMAIL || process.env.ADMIN_EMAIL || "bikkinarohitchowdary@gmail.com", "Match Confirmed", emailTemplate("Lost/Found Match", "#6366f1", `A match was successfully confirmed between item ${source.item_name} and ${target.item_name}.`));
 
     res.json({ success: true, message: 'Match confirmed and cases closed.' });
   } catch (err) {

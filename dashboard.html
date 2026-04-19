@@ -1459,6 +1459,39 @@
       loadBookings(); loadActiveBookings(); loadOverview();
     }
 
+    async function reportBooking(id) {
+      if (!confirm('Report this booking as empty? (False reports incur a penalty)')) return;
+      try {
+        const res = await fetch(`/api/bookings/report/${id}`, { method: 'POST', credentials: 'include' });
+        const d = await res.json();
+        if (d.error) alert(d.error);
+        else {
+          alert('Report submitted!');
+          loadActiveBookings();
+          loadBookings();
+          loadOverview();
+        }
+      } catch(e) { alert("Network Error"); }
+    }
+
+    async function loadActiveBookings() {
+      try {
+        const d = await fetch('/api/bookings/all-active', { credentials: 'include' }).then(r => r.json());
+        const books = d.bookings || [];
+        document.getElementById('activeBookTable').innerHTML = books.length
+          ? books.map(b => `<tr>
+        <td>${b.facility}</td>
+        <td>${b.date}</td>
+        <td>${b.time_slot}</td>
+        <td><span class="badge ${b.status === 'under_review' ? 'urgent' : 'confirmed'}">${b.status}</span></td>
+        <td>
+          <button class="btn-danger" onclick="reportBooking('${b._id || b.id}')" style="background:#f59e0b; border:none; padding:4px 8px; font-size:0.75rem; cursor:pointer;">Report Empty</button>
+        </td>
+      </tr>`).join('')
+          : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">No active bookings found</td></tr>';
+      } catch (e) { console.error("Active bookings query failed"); }
+    }
+
     async function loadBookings() {
       const d = await fetch('/api/bookings', { credentials: 'include' }).then(r => r.json());
       const books = d.bookings || [];

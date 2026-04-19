@@ -74,6 +74,8 @@ exports.createBooking = async (req, res) => {
 
     await sendEmail(user.email, "Booking Confirmation", emailTemplate("Booking Confirmed", "#10b981", `Hello ${user.name},<br><br>Your booking for <b>${facility}</b> on ${date} at ${time_slot} is confirmed!`));
 
+    await sendEmail(process.env.ADMIN_EMAIL || "bikkinarohitchowdary@gmail.com", "New Facility Booking", emailTemplate("Facility Booking Triggered", "#6366f1", `A new booking for ${facility} was made by ${user.name} on ${date}.`));
+
     res.json({ success: true, message: `${facility} booked for ${date} at ${time_slot}! Confirmation sent.`, id: booking._id });
   } catch (err) { res.status(500).json({ error: 'Booking failed.' }); }
 };

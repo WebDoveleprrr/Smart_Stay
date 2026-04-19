@@ -14,7 +14,7 @@ exports.createRequest = async (req, res) => {
     const currentUser = await User.findById(req.session.userId);
     if (!currentUser) return res.status(404).json({ error: 'User not found.' });
 
-    // Assign priority based on severity
+    let bestStaff = null;
     let priority = 'Normal';
     if (severity === 'high') priority = 'High';
     if (severity === 'low') priority = 'Low';
@@ -52,7 +52,6 @@ exports.createRequest = async (req, res) => {
       const workloadMap = {};
       workloads.forEach(w => { workloadMap[w._id] = w.count; });
       
-      let bestStaff = null;
       let bestScore = -Infinity;
       
       for (const staff of staffMembers) {
@@ -78,6 +77,9 @@ exports.createRequest = async (req, res) => {
     if (bestStaff) {
        await sendEmail(bestStaff.email, "New Assignment", emailTemplate("New Request Assigned", "#8b5cf6", `Hello ${bestStaff.name},<br><br>You have been assigned a new ${category} request at ${location}.`));
     }
+    
+    // Notify ADMIN
+    await sendEmail(process.env.ADMIN_EMAIL || "bikkinarohitchowdary@gmail.com", "New Service Request", emailTemplate("Service Request Triggered", "#6366f1", `A new ${category} request was reported by ${currentUser.name} at ${location}.`));
 
     res.json({ success: true, message: 'Service request submitted!', id: svc._id, assignee: svc.assignee_id });
   } catch (err) { res.status(500).json({ error: 'Failed to submit.' }); }
