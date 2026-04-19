@@ -1,5 +1,6 @@
 const ServiceRequest = require('../models/ServiceRequest');
 const mongoose = require('mongoose');
+const { sendEmail, emailTemplate } = require('../utils/mailer');
 
 const getUserModel = () => mongoose.model('User');
 
@@ -71,6 +72,13 @@ exports.createRequest = async (req, res) => {
     }
 
     await svc.save();
+
+    await sendEmail(currentUser.email, "Request Created", emailTemplate("Service Request Confirmed", "#3b82f6", `Hello ${currentUser.name},<br><br>Your ${category} request has been submitted.<br>Severity: ${severity}`));
+
+    if (bestStaff) {
+       await sendEmail(bestStaff.email, "New Assignment", emailTemplate("New Request Assigned", "#8b5cf6", `Hello ${bestStaff.name},<br><br>You have been assigned a new ${category} request at ${location}.`));
+    }
+
     res.json({ success: true, message: 'Service request submitted!', id: svc._id, assignee: svc.assignee_id });
   } catch (err) { res.status(500).json({ error: 'Failed to submit.' }); }
 };
@@ -127,6 +135,13 @@ exports.updateStatus = async (req, res) => {
     }
     
     await svc.save();
+
+    const User = getUserModel();
+    const reqCreator = await User.findById(svc.user_id);
+    if(reqCreator) {
+        await sendEmail(reqCreator.email, "Request Status Updated", emailTemplate("Status Update", "#f59e0b", `Hello ${reqCreator.name},<br><br>Your ${svc.category} request status changed to <b>${status}</b>.`));
+    }
+
     res.json({ success: true, message: 'Status updated.' });
   } catch (err) { res.status(500).json({ error: 'Update failed.' }); }
 };
@@ -152,6 +167,7 @@ exports.rateService = async (req, res) => {
         // Simple moving average or basic update
         staff.rating = staff.rating ? ((staff.rating * 9) + rating) / 10 : rating;
         await staff.save();
+        await sendEmail(staff.email, "New Rating Received", emailTemplate("Rating Received", "#10b981", `Hello ${staff.name},<br><br>You received a <b>${rating} star</b> rating for a recent ${svc.category} request!`));
       }
     }
     res.json({ success: true, message: 'Rating submitted.' });

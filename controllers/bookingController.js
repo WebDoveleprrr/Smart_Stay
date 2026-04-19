@@ -1,5 +1,6 @@
 const Booking = require('../models/Booking');
 const mongoose = require('mongoose');
+const { sendEmail, emailTemplate } = require('../utils/mailer');
 
 // Helper to get User model since it's still attached to mongoose in server.js
 const getUserModel = () => mongoose.model('User');
@@ -71,6 +72,8 @@ exports.createBooking = async (req, res) => {
     user.totalBookings = (user.totalBookings || 0) + 1;
     await user.save();
 
+    await sendEmail(user.email, "Booking Confirmation", emailTemplate("Booking Confirmed", "#10b981", `Hello ${user.name},<br><br>Your booking for <b>${facility}</b> on ${date} at ${time_slot} is confirmed!`));
+
     res.json({ success: true, message: `${facility} booked for ${date} at ${time_slot}! Confirmation sent.`, id: booking._id });
   } catch (err) { res.status(500).json({ error: 'Booking failed.' }); }
 };
@@ -129,6 +132,10 @@ exports.deleteBooking = async (req, res) => {
       if (user.rating < 3.0) user.isBlocked = true;
       await user.save();
     }
+    const bookedUser = await User.findById(booking.user_id);
+    if (bookedUser) {
+        await sendEmail(bookedUser.email, "Booking Cancelled", emailTemplate("Booking Cancelled", "#dc2626", `Hello ${bookedUser.name},<br><br>Your booking has been manually cancelled.<br>Your rating has decreased by 0.5. New Rating: ${bookedUser.rating.toFixed(1)}`));
+    }
     res.json({ success: true, message: 'Booking Cancelled' });
   } catch (err) { res.status(500).json({ error: 'Cancel failed.' }); }
 };
@@ -177,6 +184,12 @@ exports.reportBooking = async (req, res) => {
     }
 
     await booking.save();
+    
+    if (booking.status === 'under_review') {
+        const bookedUser = await User.findById(booking.user_id);
+        if (bookedUser) await sendEmail(bookedUser.email, "Booking Under Review", emailTemplate("Booking Reported", "#f59e0b", `Hello ${bookedUser.name},<br><br>Your booking for ${booking.facility} has been reported by other users as not in use.<br>Please check-in immediately if you are present to avoid penalty.`));
+    }
+
     res.json({ success: true, message: booking.status === 'cancelled' ? 'Booking cancelled due to multiple reports.' : 'Report submitted.' });
 
   } catch (err) { res.status(500).json({ error: 'Reporting failed.' }); }
@@ -195,6 +208,12 @@ exports.checkIn = async (req, res) => {
     booking.status = 'in_use';
     booking.checkInTime = new Date();
     await booking.save();
+
+    const User = getUserModel();
+    const bookedUser = await User.findById(booking.user_id);
+    if (bookedUser) {
+        await sendEmail(bookedUser.email, "Check-in Successful", emailTemplate("Checked In", "#3b82f6", `Hello ${bookedUser.name},<br><br>You have successfully checked into your booking for ${booking.facility}.`));
+    }
 
     res.json({ success: true, message: 'Checked in successfully.' });
   } catch (err) { res.status(500).json({ error: 'Check-in failed.' }); }

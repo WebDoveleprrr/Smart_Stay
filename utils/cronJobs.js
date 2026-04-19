@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const mongoose = require('mongoose');
+const { sendEmail, emailTemplate } = require('./mailer');
 const Booking = require('../models/Booking');
 const ServiceRequest = require('../models/ServiceRequest');
 
@@ -27,6 +28,7 @@ cron.schedule('*/5 * * * *', async () => {
         user.rating = Math.max(0, (user.rating || 5.0) - 0.5);
         if (user.rating < 3.0) user.isBlocked = true;
         await user.save();
+        await sendEmail(user.email, "Booking Cancelled", emailTemplate("Booking Auto-Cancelled", "#dc2626", `Hello ${user.name},<br><br>Your booking was cancelled due to no-show or reports.<br>Rating decreased by 0.5. New rating: ${user.rating.toFixed(1)}/5.0`));
       }
     }
 
@@ -45,6 +47,7 @@ cron.schedule('*/5 * * * *', async () => {
       if (user && user.role !== 'admin') {
         user.rating = Math.min(5.0, (user.rating || 5.0) + 0.2);
         await user.save();
+        await sendEmail(user.email, "Booking Completed", emailTemplate("Booking Success", "#10b981", `Hello ${user.name},<br><br>Your booking completed successfully.<br>Rating increased by 0.2. New rating: ${user.rating.toFixed(1)}/5.0`));
       }
     }
 
@@ -69,7 +72,7 @@ cron.schedule('0 * * * *', async () => {
       await req.save();
       
       console.log(`[ESCALATION] Service Request ${req._id} escalated due to timeout.`);
-      // Future: send email notifying admin of escalation
+      await sendEmail(process.env.ADMIN_EMAIL || "admin@smartstay.com", "Request Escalated", emailTemplate("Service Ticket Escalated", "#dc2626", `Attention Admin,<br><br>Service request <b>${req._id}</b> has been escalated due to inaction over 24 hours.`));
     }
 
   } catch (err) {

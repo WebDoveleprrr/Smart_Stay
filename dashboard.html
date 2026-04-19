@@ -1387,6 +1387,19 @@
       } catch (e) { alert("Network error"); }
     }
 
+    async function cancelBooking(id) {
+      if (!confirm("Are you sure you want to cancel this booking?")) return;
+      try {
+        const res = await fetch('/api/bookings/' + id, { method: 'DELETE', credentials: 'include' });
+        const d = await res.json();
+        if (d.error) alert(d.error);
+        else {
+          alert('Cancelled successfully.');
+          loadBookings(); loadOverview();
+        }
+      } catch (e) { alert("Network error"); }
+    }
+
     async function submitService() {
       if (!selectedCategory) return showMsg('srvMsg', 'Please select a category.', 'error');
       const desc = document.getElementById('srvDesc').value.trim();
@@ -1456,7 +1469,7 @@
       <td>${b.time_slot}</td>
       <td><span class="badge ${b.status === 'Cancelled' ? 'urgent' : (b.status === 'Confirmed' ? 'confirmed' : b.status === 'No-Show' ? 'high' : 'progress')}">${b.status}</span></td>
       <td>
-        ${b.status === 'Confirmed' ? `<button class="btn-danger" onclick="cancelBooking('${b.id}')">Cancel</button>` : ''}
+        ${['booked', 'under_review'].includes(b.status) ? `<button class="btn-danger" onclick="cancelBooking('${b.id}')">Cancel</button>` : ''}
       </td>
     </tr>`).join('')
         : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">No bookings yet</td></tr>';

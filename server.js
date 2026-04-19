@@ -1,10 +1,5 @@
 require('dotenv').config();
-const sgMail = require('@sendgrid/mail');
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-} else {
-  console.warn('WARNING: SENDGRID_API_KEY not set. Emails will be skipped.');
-}
+const { sendEmail, emailTemplate } = require('./utils/mailer');
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
@@ -51,51 +46,6 @@ if (!uri) {
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'bikkinarohitchowdary@gmail.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Rohit@1234';
 
-function emailTemplate(title, color, body) {
-  return `
-  <div style="font-family:Arial;background:#f5f5f5;padding:20px;">
-    <div style="max-width:600px;margin:auto;background:white;border-radius:10px;overflow:hidden;">
-      
-      <div style="background:${color};color:white;padding:15px;font-size:20px;font-weight:bold;">
-        ${title}
-      </div>
-
-      <div style="padding:20px;">
-        ${body}
-      </div>
-
-    </div>
-  </div>`;
-}
-
-async function sendEmail(to, subject, htmlContent, attachments = []) {
-  const msg = {
-    to,
-    from: process.env.EMAIL_USER || "brohitchowdary5@gmail.com",
-    subject,
-    html: htmlContent,
-    trackingSettings: {
-      clickTracking: { enable: false, enableText: false },
-      openTracking: { enable: false }
-    }
-  };
-
-  if (attachments && attachments.length > 0) {
-    msg.attachments = attachments;
-  }
-
-  if (!process.env.SENDGRID_API_KEY) {
-    console.log(`[MAIL SKIPPED - no key] To: ${to} | Subject: ${subject}`);
-    return;
-  }
-  
-  try {
-    await sgMail.send(msg);
-    console.log(`Email sent to ${to}`);
-  } catch (err) {
-    console.error("ERROR:", err.response?.body || err.message);
-  }
-}
 
 // ── Middleware ────────────────────────────────────────────────────
 app.use(cors({
@@ -512,6 +462,10 @@ app.post("/api/lost-found", requireAuth, upload.any(), async (req, res) => {
 
     const itemObj = item.toObject();
     itemObj.id = itemObj._id;
+    
+    const owner = await User.findById(req.session.userId);
+    if (owner) await sendEmail(owner.email, "Item Registered", emailTemplate("Lost & Found Item Registered", "#6366f1", `Hello ${owner.name},<br><br>Your item <b>${req.body.description || 'Unknown'}</b> has been successfully registered in the system.`));
+    
     res.status(200).json(itemObj);
 
     // Call AI in the background
