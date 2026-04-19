@@ -556,6 +556,10 @@ app.patch('/api/services/:id', requireAuth, async (req, res) => {
 app.post('/api/bookings', requireAuth, async (req, res) => {
   const { facility, date, time_slot } = req.body;
   if (!facility || !date || !time_slot) return res.status(400).json({ error: 'All fields required.' });
+
+  const today = new Date().toISOString().split('T')[0];
+  if (date < today) return res.status(400).json({ error: 'Cannot book in the past.' });
+
   try {
     console.log("Booking route hit");
     const user = await User.findById(req.session.userId);
@@ -707,49 +711,52 @@ app.patch('/api/admin/users/:id/unblock', requireAuth, async (req, res) => {
 // ════════════════════════════════════════════════════════════════════
 
 // Use upload.any() to flexibly handle FormData regardless of field name mismatch
-app.post("/api/lost-found", upload.any(), async (req, res) => {
-  console.log(`[Lost & Found POST] Request from ${req.session?.userId || req.userId || 'Guest'}`);
+app.post("/api/lost-found", requireAuth, upload.any(), async (req, res) => {
+  console.log(`[Lost & Found POST] Request from ${req.session.userId}`);
   console.log(`[Lost & Found POST] Body:`, req.body);
+
+  const type = req.body.type;
+  const description = req.body.description;
+  const location = req.body.location;
+
+  if (!description || !location || !type || !['Lost', 'Found'].includes(type)) {
+    return res.status(400).json({ error: "Missing or invalid fields" });
+  }
 
   try {
     let imagePayload = null;
-
-    // Extract file dynamically if present
     const imageFile = req.files && req.files.length > 0 ? req.files[0] : req.file;
 
-    if (imageFile) {
-      // Setup the graceful Base64 MongoDB fallback ready to be used if Cloudinary isn't available
-      const base64Fallback = {
-        data: imageFile.buffer.toString('base64'),
-        contentType: imageFile.mimetype
-      };
-
-      if (!process.env.CLOUDINARY_API_KEY) {
-        // Silently fallback to MongoDB Base64 Storage
-        imagePayload = base64Fallback;
-      } else {
-        try {
-          console.log("[Cloudinary] Starting image stream upload...");
-          const result = await new Promise((resolve, reject) => {
-            cloudinary.uploader.upload_stream((error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }).end(imageFile.buffer);
-          });
-          imagePayload = result.secure_url;
-          console.log("[Cloudinary] Upload successful! URL:", imagePayload);
-        } catch (uploadErr) {
-          console.error("[Cloudinary] Critical Upload Failure, falling back to MongoDB Base64:", uploadErr);
-          imagePayload = base64Fallback;
-        }
-      }
-    } else {
-      console.log("[Lost & Found POST] No image attached.");
+    if (!imageFile) {
+      return res.status(400).json({ error: "Image is required" });
     }
 
-    // Applying mapping to make their exact code work with existing schema
+    const base64Fallback = {
+      data: imageFile.buffer.toString('base64'),
+      contentType: imageFile.mimetype
+    };
+
+    if (!process.env.CLOUDINARY_API_KEY) {
+      imagePayload = base64Fallback;
+    } else {
+      try {
+        console.log("[Cloudinary] Starting image stream upload...");
+        const result = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream((error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }).end(imageFile.buffer);
+        });
+        imagePayload = result.secure_url;
+        console.log("[Cloudinary] Upload successful! URL:", imagePayload);
+      } catch (uploadErr) {
+        console.error("[Cloudinary] Critical Upload Failure, falling back to MongoDB Base64:", uploadErr);
+        imagePayload = base64Fallback;
+      }
+    }
+
     const item = new LostFound({
-      user_id: req.session ? req.session.userId : req.userId,
+      user_id: req.session.userId,
       item_name: req.body.description || "Unknown",
       type: req.body.type,
       description: req.body.description,
@@ -761,7 +768,46 @@ app.post("/api/lost-found", upload.any(), async (req, res) => {
 
     await item.save();
 
-    res.status(200).json(item);
+    const itemObj = item.toObject();
+    itemObj.id = itemObj._id;
+    res.status(200).json(itemObj);
+
+    // Call AI in the background
+    if (AI_URL && imagePayload) {
+      setTimeout(async () => {
+        try {
+          let b64 = "";
+          if (imagePayload.data) {
+            b64 = imagePayload.data;
+          } else if (typeof imagePayload === "string" && imagePayload.startsWith("http")) {
+            const resp = await fetch(imagePayload);
+            const buf = await resp.arrayBuffer();
+            b64 = Buffer.from(buf).toString('base64');
+          }
+          if (b64) {
+            const aiRes = await fetch(`${AI_URL}/embed`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ image_base64: b64 }),
+              signal: AbortSignal.timeout(30000)
+            });
+            if (aiRes.ok) {
+              const data = await aiRes.json();
+              if (data.embedding) {
+                item.embedding = data.embedding;
+                await item.save();
+                console.log(`[AI] Embedding saved for item ${item._id}`);
+              }
+            } else {
+              console.error(`[AI] /embed failed with status ${aiRes.status}`);
+            }
+          }
+        } catch (e) {
+          console.error("[AI] Error generating embedding:", e);
+        }
+      }, 0);
+    }
+
   } catch (err) {
     console.error("Lost&Found error:", err);
     res.status(500).json({ error: "Upload failed" });
@@ -946,8 +992,9 @@ setInterval(async () => {
     for (const bk of confirmedBookings) {
       if (!bk.time_slot || !bk.date) continue;
       // time_slot format e.g., "09:00 AM - 10:00 AM"
-      const timeParts = bk.time_slot.split('-');
+      const timeParts = bk.time_slot.split(/[-–]/);
       if (timeParts.length < 2) continue;
+      // standardise the format, extract end time
       const endTimeStr = timeParts[1].trim(); 
       // Parse endTimeStr + bk.date into Date
       const dateStr = bk.date; // "yyyy-mm-dd"

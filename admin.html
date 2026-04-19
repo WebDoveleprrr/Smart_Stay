@@ -39,7 +39,7 @@
     }
 
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Nunito', sans-serif;
       color: var(--text);
       height: 100vh;
       display: flex;
@@ -779,6 +779,7 @@
   </div>
 
   <script>
+    document.body.style.visibility = 'hidden';
     function toggleSidebar() {
       if (window.innerWidth <= 768) {
         document.querySelector('.sidebar').classList.toggle('open');
@@ -787,9 +788,9 @@
       }
     }
     let allSrv = [];
-    fetch('https://smart-stay-0gxx.onrender.com/api/session', { credentials: 'include' }).then(r => r.json()).then(d => {
+    fetch('/api/session', { credentials: 'include' }).then(r => r.json()).then(d => {
       if (!d.loggedIn || d.role !== 'admin') window.location.href = '/login.html';
-      else { loadStats(); loadAdminServices(); loadAdminBookings(); loadAdminLF(); }
+      else { document.body.style.visibility = 'visible'; loadStats(); loadAdminServices(); loadAdminBookings(); loadAdminLF(); }
     });
 
     const pageTitles = { overview: '🏨 Admin Dashboard', services: '🔧 Service Requests', bookings: '🏋️ Facility Bookings', lostfound: '🔍 Lost & Found Reports' };
@@ -802,7 +803,7 @@
     }
 
     async function loadStats() {
-      const d = await fetch('https://smart-stay-0gxx.onrender.com/api/admin/stats', { credentials: 'include' }).then(r => r.json());
+      const d = await fetch('/api/admin/stats', { credentials: 'include' }).then(r => r.json());
       const s = d.stats || {};
       document.getElementById('as-students').textContent = s.students ?? '—';
       document.getElementById('as-total').textContent = s.totalRequests ?? '—';
@@ -812,7 +813,7 @@
     }
 
     async function loadAdminServices() {
-      const d = await fetch('https://smart-stay-0gxx.onrender.com/api/services', { credentials: 'include' }).then(r => r.json());
+      const d = await fetch('/api/services', { credentials: 'include' }).then(r => r.json());
       allSrv = d.requests || [];
       renderAdminSrv(allSrv);
       const catIcons = { Electrician: '⚡', Plumber: '🔩', Cleaning: '🧹', Laundry: '👕', Carpenter: '🪚', Other: '⚙️' };
@@ -851,12 +852,12 @@
     }
 
     async function updateStatus(id, status) {
-      await fetch(`https://smart-stay-0gxx.onrender.com/api/services/${id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+      await fetch(`/api/services/${id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
       loadStats(); loadAdminServices();
     }
 
     async function loadAdminBookings() {
-      const d = await fetch('https://smart-stay-0gxx.onrender.com/api/bookings', { credentials: 'include' }).then(r => r.json());
+      const d = await fetch('/api/bookings', { credentials: 'include' }).then(r => r.json());
       const books = d.bookings || [];
       document.getElementById('adminBookTable').innerHTML = books.length
         ? books.map(b => `<tr>
@@ -886,24 +887,24 @@
 
     async function cancelBook(id) {
       if (!confirm('Cancel this booking?')) return;
-      await fetch(`https://smart-stay-0gxx.onrender.com/api/bookings/${id}`, { method: 'DELETE', credentials: 'include' });
+      await fetch(`/api/bookings/${id}`, { method: 'DELETE', credentials: 'include' });
       loadAdminBookings(); loadStats();
     }
 
     async function markUsed(id) {
       if (!confirm('Mark this booking as used?')) return;
-      await fetch(`https://smart-stay-0gxx.onrender.com/api/bookings/${id}/usage`, { method: 'PATCH', credentials: 'include' });
+      await fetch(`/api/bookings/${id}/usage`, { method: 'PATCH', credentials: 'include' });
       loadAdminBookings(); loadStats();
     }
 
     async function unblockUser(userId) {
       if (!confirm('Unblock this user and reset their rating?')) return;
-      await fetch(`https://smart-stay-0gxx.onrender.com/api/admin/users/${userId}/unblock`, { method: 'PATCH', credentials: 'include' });
+      await fetch(`/api/admin/users/${userId}/unblock`, { method: 'PATCH', credentials: 'include' });
       loadAdminBookings(); loadStats();
     }
 
     async function loadAdminLF() {
-      const d = await fetch('https://smart-stay-0gxx.onrender.com/api/lost-found', { credentials: 'include' }).then(r => r.json());
+      const d = await fetch('/api/lost-found', { credentials: 'include' }).then(r => r.json());
       const items = d.items || [];
       document.getElementById('adminLFTable').innerHTML = items.length
         ? items.map(i => `<tr>
@@ -927,7 +928,7 @@
        document.getElementById('matchModal').style.display = 'flex';
        
        try {
-         const matchRes = await fetch('https://smart-stay-0gxx.onrender.com/api/match-image', { 
+         const matchRes = await fetch('/api/match-image', { credentials: 'include',  
             method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ id: id })
          });
@@ -984,7 +985,7 @@
     async function confirmAdminMatch(sourceId, targetId) {
        if(!confirm('Are you sure you want to mark these items as a match? Both cases will be closed.')) return;
        try {
-         const res = await fetch('https://smart-stay-0gxx.onrender.com/api/confirm-match', {
+         const res = await fetch('/api/confirm-match', { credentials: 'include', 
             method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ source_id: sourceId, target_id: targetId })
          });
@@ -1003,7 +1004,7 @@
     function goHome() {
       showPage('overview', document.querySelectorAll('.nav-item')[0]);
     }
-    async function doLogout() { await fetch('https://smart-stay-0gxx.onrender.com/api/logout', { method: 'POST', credentials: 'include' }); window.location.href = '/login.html'; }
+    async function doLogout() { await fetch('/api/logout', { method: 'POST', credentials: 'include' }); window.location.href = '/login.html'; }
   </script>
 </body>
 

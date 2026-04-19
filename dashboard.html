@@ -39,7 +39,7 @@
     }
 
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Nunito', sans-serif;
       color: var(--text);
       height: 100vh;
       display: flex;
@@ -1245,7 +1245,7 @@
     const tilts = ['−2deg', '1.5deg', '−1deg', '2deg', '−1.5deg', '0.8deg', '−0.5deg', '1.8deg'];
     const catIcons = { Electrician: '⚡', Plumber: '🔩', Cleaning: '🧹', Laundry: '👕', Carpenter: '🪚', Other: '⚙️' };
 
-    fetch('https://smart-stay-0gxx.onrender.com/api/session', { credentials: 'include' }).then(r => r.json()).then(d => {
+    fetch('/api/session', { credentials: 'include' }).then(r => r.json()).then(d => {
       if (!d.loggedIn) return window.location.href = '/login.html';
       document.getElementById('sidebarName').textContent = d.name;
       document.getElementById('avatarInit').textContent = d.name.charAt(0).toUpperCase();
@@ -1260,7 +1260,7 @@
 
     async function loadUserReliability() {
       try {
-        const d = await fetch('https://smart-stay-0gxx.onrender.com/api/profile', { credentials: 'include' }).then(r => r.json());
+        const d = await fetch('/api/profile', { credentials: 'include' }).then(r => r.json());
         if (d.user) {
           const u = d.user;
           const facMsg = document.getElementById('facMsg');
@@ -1290,9 +1290,9 @@
     // MOD 7 + MOD 8: Overview with 3 stat cards, activity with two headings
     async function loadOverview() {
       const [s, b, lf] = await Promise.all([
-        fetch('https://smart-stay-0gxx.onrender.com/api/services', { credentials: 'include' }).then(r => r.json()),
-        fetch('https://smart-stay-0gxx.onrender.com/api/bookings', { credentials: 'include' }).then(r => r.json()),
-        fetch('https://smart-stay-0gxx.onrender.com/api/lost-found', { credentials: 'include' }).then(r => r.json())
+        fetch('/api/services', { credentials: 'include' }).then(r => r.json()),
+        fetch('/api/bookings', { credentials: 'include' }).then(r => r.json()),
+        fetch('/api/lost-found', { credentials: 'include' }).then(r => r.json())
       ]);
       const reqs = s.requests || [];
       const books = b.bookings || [];
@@ -1301,10 +1301,10 @@
       const lfFound = lfAll.filter(i => i.type === 'Found');
 
       // MOD 7: Update counters
-      document.getElementById('s-req').textContent = reqs.length;
-      document.getElementById('s-book').textContent = books.length;
-      document.getElementById('s-lost').textContent = lfLost.length;
-      document.getElementById('s-found').textContent = lfFound.length;
+      const elReq = document.getElementById('s-req'); if (elReq) elReq.textContent = reqs.length;
+      const elBook = document.getElementById('s-book'); if (elBook) elBook.textContent = books.length;
+      const elLost = document.getElementById('s-lost'); if (elLost) elLost.textContent = lfLost.length;
+      const elFound = document.getElementById('s-found'); if (elFound) elFound.textContent = lfFound.length;
 
       // MOD 8: Recent Activity — two separate sections
       const recentReqs = reqs.slice(0, 3);
@@ -1330,7 +1330,7 @@
             <div style="font-size:0.84rem;font-weight:600;color:var(--cream)">${b.facility}</div>
             <div style="font-size:0.7rem;color:var(--muted)">${b.date} &nbsp;·&nbsp; ${b.time_slot}</div>
           </div>
-          <span class="badge confirmed">${b.status}</span>
+          <span class="badge ${b.status === 'Confirmed' ? 'confirmed' : b.status === 'Cancelled' ? 'urgent' : b.status === 'No-Show' ? 'high' : 'resolved'}">${b.status}</span>
         </div>`).join('')
         : '<div style="color:var(--muted);font-size:0.82rem;padding:6px 0">No bookings yet</div>';
 
@@ -1351,7 +1351,7 @@
       if (!selectedService) return showMsg('srvMsg', 'Please select a category.', 'error');
       const desc = document.getElementById('srvDesc').value.trim();
       const priority = document.getElementById('srvPriority').value;
-      const res = await fetch('https://smart-stay-0gxx.onrender.com/api/services', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: selectedService, description: desc, priority }) });
+      const res = await fetch('/api/services', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: selectedService, description: desc, priority }) });
       const d = await res.json();
       if (d.error) return showMsg('srvMsg', d.error, 'error');
       showMsg('srvMsg', d.message, 'success');
@@ -1361,7 +1361,7 @@
     }
 
     async function loadServices() {
-      const d = await fetch('https://smart-stay-0gxx.onrender.com/api/services', { credentials: 'include' }).then(r => r.json());
+      const d = await fetch('/api/services', { credentials: 'include' }).then(r => r.json());
       const reqs = d.requests || [];
       document.getElementById('srvTable').innerHTML = reqs.length
         ? reqs.map(r => `<tr>
@@ -1381,8 +1381,12 @@
       if (!selectedFacility) return showMsg('facMsg', 'Select a facility.', 'error');
       const date = document.getElementById('facDate').value;
       if (!date) return showMsg('facMsg', 'Select a date.', 'error');
+      
+      const today = new Date().toISOString().split('T')[0];
+      if (date < today) return showMsg('facMsg', 'Cannot book a facility in the past.', 'error');
+
       if (!selectedSlot) return showMsg('facMsg', 'Select a time slot.', 'error');
-      const res = await fetch('https://smart-stay-0gxx.onrender.com/api/bookings', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ facility: selectedFacility, date, time_slot: selectedSlot }) });
+      const res = await fetch('/api/bookings', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ facility: selectedFacility, date, time_slot: selectedSlot }) });
       const d = await res.json();
       if (d.error) return showMsg('facMsg', d.error, 'error');
       showMsg('facMsg', d.message, 'success');
@@ -1398,14 +1402,14 @@
     }
 
     async function loadBookings() {
-      const d = await fetch('https://smart-stay-0gxx.onrender.com/api/bookings', { credentials: 'include' }).then(r => r.json());
+      const d = await fetch('/api/bookings', { credentials: 'include' }).then(r => r.json());
       const books = d.bookings || [];
       document.getElementById('bookTable').innerHTML = books.length
         ? books.map(b => `<tr>
       <td>${b.facility}</td>
       <td>${b.date}</td>
       <td>${b.time_slot}</td>
-      <td><span class="badge ${b.status === 'Cancelled' ? 'urgent' : (b.status === 'Confirmed' ? 'confirmed' : 'progress')}">${b.status}</span></td>
+      <td><span class="badge ${b.status === 'Cancelled' ? 'urgent' : (b.status === 'Confirmed' ? 'confirmed' : b.status === 'No-Show' ? 'high' : 'progress')}">${b.status}</span></td>
       <td>
         ${b.status === 'Confirmed' ? `<button class="btn-danger" onclick="cancelBooking('${b.id}')">Cancel</button>` : ''}
       </td>
@@ -1416,7 +1420,7 @@
     async function cancelBooking(id) {
       if (!confirm('Cancel this booking?')) return;
       try {
-        await fetch(`https://smart-stay-0gxx.onrender.com/api/bookings/${id}`, { method: 'DELETE', credentials: 'include' });
+        await fetch(`/api/bookings/${id}`, { method: 'DELETE', credentials: 'include' });
         showMsg('facMsg', 'Booking Cancelled', 'success');
         await loadBookings();
         loadOverview();
@@ -1440,11 +1444,14 @@
       const type = document.getElementById('lfType').value;
       const description = document.getElementById('lfName').value.trim();
       const details = document.getElementById('lfDesc').value;
-      const location = document.getElementById('lfLocation').value;
-      if (!description) return showMsg('lfMsg', 'Item name required.', 'error');
+      const location = document.getElementById('lfLocation').value.trim();
+      const file = document.getElementById("imageInput").files[0];
+
+      if (!description) return showMsg('lfMsg', 'Item description required.', 'error');
+      if (!location) return showMsg('lfMsg', 'Location is required.', 'error');
+      if (!file) return showMsg('lfMsg', 'Image file is required.', 'error');
       
       showMsg('lfMsg', 'Uploading & Finding matches...', 'success');
-      const file = document.getElementById("imageInput").files[0];
       
       const formData = new FormData();
       formData.append("type", type);
@@ -1458,10 +1465,7 @@
 
       let d;
       try {
-        const res = await fetch("/api/lost-found", {
-          method: "POST",
-          body: formData
-        });
+        const res = await fetch('/api/lost-found', { method: 'POST', credentials: 'include', body: formData });
         d = await res.json();
         console.log("Response:", d);
       } catch (err) {
@@ -1475,7 +1479,7 @@
       showMsg('lfMsg', 'Analyzing image similarity...', 'success');
       
       try {
-        const matchRes = await fetch('https://smart-stay-0gxx.onrender.com/api/match-image', { 
+        const matchRes = await fetch('/api/match-image', { credentials: 'include',  
             method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ id: d.id })
         });
@@ -1485,7 +1489,7 @@
             showMatchModal(d.id, mData.matches, mData.source_image_url);
             showMsg('lfMsg', 'Matches found! Please review the modal.', 'success');
         } else {
-            showMsg('lfMsg', d.message, 'success');
+            showMsg('lfMsg', 'Report filed! Auto-matching done in background. Re-match later from the dashboard if needed.', 'success');
         }
       } catch (e) {
          console.warn("Match detection error:", e);
@@ -1551,7 +1555,7 @@
     async function confirmAIMatch(sourceId, targetId) {
        if(!confirm('Are you sure you want to mark these items as a match? Both cases will be closed.')) return;
        try {
-         const res = await fetch('https://smart-stay-0gxx.onrender.com/api/confirm-match', {
+         const res = await fetch('/api/confirm-match', { credentials: 'include', 
             method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ source_id: sourceId, target_id: targetId })
          });
@@ -1570,7 +1574,7 @@
     }
 
     async function loadLF() {
-      const d = await fetch('https://smart-stay-0gxx.onrender.com/api/lost-found', { credentials: 'include' }).then(r => r.json());
+      const d = await fetch('/api/lost-found', { credentials: 'include' }).then(r => r.json());
       lfItems = d.items || []; renderLF(lfItems);
     }
 
@@ -1604,15 +1608,37 @@
         <div><span style="font-weight:600; color:var(--text);">By:</span> ${i.user_name}</div>
         <div>${new Date(i.created_at * 1000).toLocaleDateString()}</div>
       </div>
-      <div style="margin-top:12px;">
+      <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
         <span class="badge ${i.status === 'Closed' ? 'resolved' : 'pending'}" style="font-size:0.7rem;">${i.status}</span>
+        ${i.status === 'Open' ? `<button class="btn" style="padding:4px 8px; font-size:0.75rem; background:var(--amber)" onclick="triggerMatch('${i.id}')">Find Match</button>` : ''}
       </div>
     </div>`).join('');
     }
 
+    async function triggerMatch(id) {
+       document.getElementById('matchModalContent').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Analyzing images...</div>';
+       document.getElementById('matchModal').style.display = 'flex';
+       try {
+         const matchRes = await fetch('/api/match-image', { 
+            method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id })
+         });
+         const mData = await matchRes.json();
+         if (mData.matches && mData.matches.length > 0) {
+            showMatchModal(id, mData.matches, mData.source_image_url);
+         } else {
+            document.getElementById('matchModalContent').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No matching items found.</div>';
+         }
+       } catch (e) {
+          document.getElementById('matchModalContent').innerHTML = '<div style="color:var(--rust); text-align:center; padding:20px;">Failed to find matches.</div>';
+       }
+    }
+    }
+
     async function loadProfile() {
       try {
-        const res = await fetch('https://smart-stay-0gxx.onrender.com/api/profile', { credentials: 'include' });
+        const res = await fetch('/api/profile', { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/login.html'; return; }
         const d = await res.json();
         if (!d.user) return;
         const u = d.user;
@@ -1639,7 +1665,7 @@
       showPage('overview', document.querySelectorAll('.nav-item')[0]);
     }
     function showMsg(id, text, type) { const e = document.getElementById(id); e.textContent = text; e.className = `msg ${type} show`; }
-    async function doLogout() { await fetch('https://smart-stay-0gxx.onrender.com/api/logout', { method: 'POST', credentials: 'include' }); window.location.href = '/login.html'; }
+    async function doLogout() { await fetch('/api/logout', { method: 'POST', credentials: 'include' }); window.location.href = '/login.html'; }
   </script>
 </body>
 
