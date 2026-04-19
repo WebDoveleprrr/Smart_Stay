@@ -1376,13 +1376,6 @@
       document.getElementById('srvDesc').value = ''; selectedCategory = '';
       document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
       loadServices(); loadOverview();
-    }, body: JSON.stringify({ category: selectedCategory, description: desc, priority }) });
-      const d = await res.json();
-      if (d.error) return showMsg('srvMsg', d.error, 'error');
-      showMsg('srvMsg', d.message, 'success');
-      document.getElementById('srvDesc').value = ''; selectedCategory = '';
-      document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
-      loadServices(); loadOverview();
     }
 
     async function loadServices() {
