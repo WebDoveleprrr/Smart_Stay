@@ -1,171 +1,211 @@
-# 🏨 SMART STAY — Hostel Management System v5.0
-
-### Intelligent Hostel Operations Platform (Full-Stack + AI Enabled)
-
----
-
-## 📌 Overview
-
-**Smart Stay** is a scalable hostel management platform engineered to digitize and optimize hostel operations. It integrates automation, cloud infrastructure, and AI-driven capabilities to streamline processes such as room allocation, service requests, facility booking, and lost & found management.
-
-The system is designed with a modular full-stack architecture and supports real-world deployment using modern cloud services.
-
----
-
-## 🔐 Admin Access
-
-* **Email:** [bikkinarohitchowdary@gmail.com](mailto:bikkinarohitchowdary@gmail.com)
-* **Password:** Rohit@1234
-
-> Admin authentication bypasses OTP for streamlined access.
-
----
-
-## ⚙️ Technology Stack
-
-### Frontend
-
-* HTML5, CSS3, JavaScript
-
-### Backend
-
-* Node.js
-* Express.js
-
-### Database
-
-* MongoDB (Local + Atlas Cloud)
-
-### Authentication
-
-* OTP-based email authentication
-* Session management using MongoDB
-
-### Cloud & Media
-
-* Cloudinary (image upload and storage)
-
-### AI Module
-
-* Image similarity detection using pretrained deep learning models (MobileNet / PyTorch)
-
-### Deployment
-
-* Railway / Render
-
----
-
-## ✨ Core Features
-
-### 🔑 Authentication & Access Control
-
-* Secure OTP-based login and registration
-* Admin direct access (OTP bypass)
-* Persistent session handling
-
-### 🏠 Room Management
-
-* Structured block and room navigation
-* Efficient allocation system
-
-### 🛠 Service Request System
-
-* Issue reporting with tracking
-* Automated email notifications
-
-### 🏋️ Facility Booking
-
-* Real-time booking of hostel facilities
-* Booking history and tracking
-
-### 🔍 Lost & Found (AI Powered)
-
-* Image-based item reporting
-* Cloudinary-backed image storage
-* AI-driven similarity matching for identifying items
-
-### 📊 Dashboard & Analytics
-
-* System overview with key metrics
-* Unified activity feed (requests + bookings)
-
-### 📧 Notification System
-
-* OTP verification emails
-* Event-based notifications (registration, bookings, requests)
-
----
-
-## 🤖 AI Image Matching System
-
-The platform integrates a lightweight deep learning pipeline to enhance the lost & found module:
-
-* Feature extraction using pretrained CNN models
-* Vector-based similarity comparison
-* Automated matching between uploaded images
-* Improves identification accuracy and user experience
-
----
-
-## ☁️ Deployment & Environment Configuration
-
-The application is cloud-ready and supports deployment on platforms such as **Railway** and **Render**.
-
-### Required Environment Variables
-
-```
-MONGO_URI        = MongoDB Atlas connection string  
-MAIL_USER        = Email service username  
-MAIL_PASS        = Email app password  
-CLOUDINARY_URL   = Cloudinary configuration string  
-PORT             = 3000  
-```
-
----
-
-## 📁 Project Architecture
-
-```
-├── server.js              # Application entry point  
-├── routes/               # API route definitions  
-├── models/               # MongoDB schemas  
-├── controllers/          # Business logic layer  
-├── public/               # Frontend assets  
-├── uploads/              # Temporary file storage  
-├── ai-service/           # AI image matching module  
-```
-
----
-
-## ⚠️ Operational Notes
-
-* Render free tier may introduce cold start delays
-* Railway provides faster response for production demos
-* Secure all environment variables before deployment
-* Ensure proper configuration of Cloudinary and email services
-
----
-
-## 🆕 Version Highlights (v5.0)
-
-* AI-powered image matching system
-* Cloudinary integration for scalable media handling
-* MongoDB Atlas cloud database support
-* Persistent session management
-* Enhanced UI navigation and activity tracking
-* Production-ready deployment architecture
-
----
-
-## 📄 Reference
-
-This version builds upon the previous system configuration and extends it with cloud and AI capabilities.
-Original base documentation: 
-
----
-
-## 🚀 Conclusion
-
-Smart Stay evolves traditional hostel management into an intelligent, automated, and scalable system by combining full-stack engineering with AI-driven enhancements.
-
----
+    Smart Stay — Intelligent Hostel Management System
+
+Version 5.0 | Full-Stack + AI Enabled | Deployed on Render
+
+    Project Overview
+
+Smart Stay is a complete hostel management platform designed to replace manual processes with a modern, automated system.
+
+Instead of handling things like maintenance requests, bookings, or lost items on paper or WhatsApp, everything is managed through a single web application.
+
+It combines:
+
+A Node.js backend (API + logic)
+MongoDB cloud database
+Cloudinary for image storage
+A separate Python AI service for image matching
+    Who uses it?
+    Students
+
+Students can:
+
+Raise service requests (electrician, cleaning, etc.)
+Book facilities like gym or study hall
+Report lost or found items
+Track all their activity from a dashboard
+    Admins
+
+Admins get a separate control panel where they can:
+
+Manage all students
+Approve/update service requests
+Monitor bookings
+Handle lost & found cases
+View system-wide stats
+Block/unblock users
+    Live Deployment
+Main App: https://smart-stay-0gxx.onrender.com
+AI Service: https://smart-stay-1.onrender.com
+Health Check: https://smart-stay-1.onrender.com/health
+
+    Note: Since this uses Render’s free tier, services may sleep.
+First request after inactivity may take 30–90 seconds.
+
+    Technology Stack
+Frontend
+HTML, CSS, JavaScript
+Responsive layout using Grid & Flexbox
+Clean typography using Google Fonts
+Backend
+Node.js + Express
+MongoDB + Mongoose
+Sessions with connect-mongo
+Multer for file uploads
+bcrypt for password security
+Cloud Services
+Cloudinary → image storage
+SendGrid → email system
+    AI Microservice
+Python + FastAPI
+PyTorch (MobileNetV2 model)
+Pillow + NumPy
+Used for image similarity matching
+    System Architecture
+Frontend (HTML pages)
+→ talks to Node.js backend (REST API)
+→ stores data in MongoDB
+→ sends images to AI service
+→ AI returns embeddings & matches
+    Features
+    Authentication & Security
+Student registration with validation
+Login with OTP-based 2FA
+Admin login without OTP
+Secure sessions stored in MongoDB
+    Dashboard
+Shows:
+Service requests count
+Bookings
+Lost & found stats
+Includes recent activity
+Fully responsive (mobile + desktop)
+    Service Requests
+Categories: Electrician, Plumber, etc.
+Priority levels: Normal / High / Urgent
+Status tracking:
+Pending → In Progress → Resolved
+    Facility Booking
+Book gym, study hall, etc.
+Prevents double booking
+Tracks booking status
+Includes:
+cancellation penalties
+no-show detection
+    Lost & Found (AI Powered)
+
+This is the core highlight feature.
+
+Flow:
+Student uploads item + image
+Image stored (Cloudinary or base64)
+AI generates embedding (background process)
+Matching compares items using cosine similarity
+    AI Matching
+Uses MobileNetV2 model
+Generates feature vector (1280 dimensions)
+Matches items with similarity ≥ 75%
+Shows top 3 matches
+    Email System
+OTP emails
+Booking confirmations
+Notifications
+Match confirmations
+
+If SendGrid is not configured → emails are skipped safely
+
+    Reliability Rating System
+
+Each student has a rating out of 5:
+
+Action	Effect
+Booking used	+0.2
+Cancelled	−0.5
+No-show	−1.0
+
+If rating < 3 → user gets blocked
+
+    AI Pipeline (Simplified)
+Image uploaded
+Converted to base64
+Sent to /embed
+Processed by MobileNetV2
+Feature vector stored
+Matching uses cosine similarity
+    API Overview
+Auth
+/api/register
+/api/login
+/api/verify-otp
+Services
+/api/services
+Bookings
+/api/bookings
+Lost & Found
+/api/lost-found
+/api/match-image
+Admin
+/api/admin/...
+AI
+/embed
+/similarity
+/health
+    Environment Variables
+
+You need:
+
+MongoDB URI
+Session secret
+SendGrid key
+Cloudinary config
+AI service URL
+
+(Full list unchanged)
+
+    Project Structure
+smart-stay/
+├── server.js
+├── package.json
+├── runtime.txt
+├── index.html
+├── login.html
+├── dashboard.html
+├── admin-dashboard.html
+├── ai-service/
+│   ├── main.py
+│   └── requirements.txt
+    Local Setup
+Install dependencies
+Configure .env
+Run backend
+Run AI service
+    Deployment
+
+Two services on Render:
+
+Node.js backend
+Python AI service
+
+Optional:
+
+Use UptimeRobot to keep AI awake
+    Admin Credentials
+
+Email: bikkinarohitchowdary@gmail.com
+
+Password: Rohit@1234
+
+    Known Limitations
+Free tier → cold starts
+AI embedding is async → slight delay
+Base64 storage if Cloudinary missing
+Email disabled if API key missing
+    Final Note
+
+Smart Stay is designed to:
+
+automate hostel operations
+reduce manual effort
+integrate AI for smarter workflows
+    Smart Stay v5.0
+
+Built for real-world hostel automation with AI integration
