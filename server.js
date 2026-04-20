@@ -13,6 +13,8 @@ const { v4: uuidv4 } = require('uuid');
 require('./utils/cronJobs');
 const { v2: cloudinary } = require('cloudinary');
 
+const ServiceRequest = require('./models/ServiceRequest');
+const Booking = require('./models/Booking');
 // Cloudinary config
 if (process.env.CLOUDINARY_CLOUD_NAME) {
   cloudinary.config({
@@ -231,12 +233,12 @@ app.post('/api/login', async (req, res) => {
     if (!user) return res.status(401).json({ error: 'Invalid email or password.' });
 
     if (user.rating === undefined) {
-        user.rating = 5.0;
-        user.totalBookings = 0;
-        user.cancelledBookings = 0;
-        user.noShows = 0;
-        user.isBlocked = false;
-        await user.save();
+      user.rating = 5.0;
+      user.totalBookings = 0;
+      user.cancelledBookings = 0;
+      user.noShows = 0;
+      user.isBlocked = false;
+      await user.save();
     }
 
     const match = await bcrypt.compare(password, user.password_hash);
@@ -284,14 +286,14 @@ app.post('/api/verify-otp', async (req, res) => {
   try {
     const user = await User.findById(req.session.pendingUserId);
     if (!user) return res.status(500).json({ error: 'Session error.' });
-    
+
     if (user.rating === undefined) {
-        user.rating = 5.0;
-        user.totalBookings = 0;
-        user.cancelledBookings = 0;
-        user.noShows = 0;
-        user.isBlocked = false;
-        await user.save();
+      user.rating = 5.0;
+      user.totalBookings = 0;
+      user.cancelledBookings = 0;
+      user.noShows = 0;
+      user.isBlocked = false;
+      await user.save();
     }
     // ✅ FIRST check expiry
     if (!user.otp_expires || Date.now() > user.otp_expires) {
@@ -371,9 +373,9 @@ app.get('/api/profile', requireAuth, async (req, res) => {
     }
 
     res.json({ user: { id: user._id, name: user.name, email: user.email, room: user.room, block: user.block, phone: user.phone, role: user.role, created_at: user.created_at, rating: user.rating, totalBookings: user.totalBookings, cancelledBookings: user.cancelledBookings, noShows: user.noShows, isBlocked: user.isBlocked } });
-  } catch (err) { 
+  } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' }); 
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -390,7 +392,7 @@ app.patch('/api/admin/users/:id/unblock', requireAuth, async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: 'User not found.' });
     if (user.rating === undefined) { user.rating = 5.0; user.totalBookings = 0; user.cancelledBookings = 0; user.noShows = 0; user.isBlocked = false; }
-    
+
     user.isBlocked = false;
     user.rating = 3.5;
     await user.save();
@@ -462,14 +464,14 @@ app.post("/api/lost-found", requireAuth, upload.any(), async (req, res) => {
 
     const itemObj = item.toObject();
     itemObj.id = itemObj._id;
-    
+
     const owner = await User.findById(req.session.userId);
     if (owner) {
-       await sendEmail(owner.email, "Item Registered", emailTemplate("Lost & Found Item Registered", "#6366f1", `Hello ${owner.name},<br><br>Your item <b>${req.body.description || 'Unknown'}</b> has been successfully registered in the system.`));
-       
-       await sendEmail(ADMIN_EMAIL || process.env.ADMIN_EMAIL || "bikkinarohitchowdary@gmail.com", "New Lost/Found Item Reoprted", emailTemplate("Lost/Found Item", "#6366f1", `A new ${req.body.type} item was reported by ${owner.name}.<br>Description: ${req.body.description || 'Unknown'}<br>Location: ${req.body.location}`));
+      await sendEmail(owner.email, "Item Registered", emailTemplate("Lost & Found Item Registered", "#6366f1", `Hello ${owner.name},<br><br>Your item <b>${req.body.description || 'Unknown'}</b> has been successfully registered in the system.`));
+
+      await sendEmail(ADMIN_EMAIL || process.env.ADMIN_EMAIL || "bikkinarohitchowdary@gmail.com", "New Lost/Found Item Reoprted", emailTemplate("Lost/Found Item", "#6366f1", `A new ${req.body.type} item was reported by ${owner.name}.<br>Description: ${req.body.description || 'Unknown'}<br>Location: ${req.body.location}`));
     }
-    
+
     res.status(200).json(itemObj);
 
     // Call AI in the background
