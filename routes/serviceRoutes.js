@@ -4,7 +4,6 @@ const serviceController = require('../controllers/serviceController');
 
 router.post('/', serviceController.createRequest);
 router.get('/', serviceController.getRequests);
-router.put('/status/:id', serviceController.updateStatus);
 router.post('/rate/:id', serviceController.rateService);
 router.get('/analytics', serviceController.getAnalytics);
 

@@ -211,7 +211,7 @@
 
     .logout-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
     }
 
     .main {
@@ -317,13 +317,13 @@
       border-radius: 12px;
       padding: 24px;
       text-align: center;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
       transition: all 0.2s ease-in-out;
     }
 
     .stat-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
     }
 
     .stat-icon {
@@ -351,14 +351,14 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 24px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
       margin-bottom: 24px;
       transition: all 0.2s ease-in-out;
     }
-    
+
     .card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
     }
 
     .card-title {
@@ -529,7 +529,7 @@
 
     .cancel-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     @media(max-width: 900px) {
@@ -569,213 +569,224 @@
 
 <body>
   <header class="global-header">
-    <div class="header-branding" onclick="window.location.href='/admin.html'" style="cursor:pointer; display:flex; align-items:center; gap:10px;" title="Overview">
+    <div class="header-branding" onclick="window.location.href='/admin.html'"
+      style="cursor:pointer; display:flex; align-items:center; gap:10px;" title="Overview">
       <div class="logo-icon" style="width:32px; height:32px; font-size:1.1rem; border-radius:8px;">🛡️</div>
       <div class="global-logo">Smart<span>Stay</span></div>
     </div>
     <div class="admin-tag">🛡️ Administrator</div>
   </header>
   <div class="layout-wrapper">
-  <div class="sidebar">
-    <nav class="nav">
-      <div class="nav-section">Overview</div>
-      <button class="nav-item active" onclick="showPage('overview',this)"><span class="icon">📊</span>
-        Dashboard</button>
-      <div class="nav-section">Manage</div>
-      <button class="nav-item" onclick="showPage('services',this)"><span class="icon">🔧</span> Service
-        Requests</button>
-      <button class="nav-item" onclick="showPage('bookings',this)"><span class="icon">🏋️</span> Facility
-        Bookings</button>
-      <button class="nav-item" onclick="showPage('lostfound',this)"><span class="icon">🔍</span> Lost &amp;
-        Found</button>
-    </nav>
-    <div class="sidebar-footer">
-      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
-    </div>
-  </div>
-
-  <div class="main">
-    <div class="topbar">
-      <div class="topbar-left">
-        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-        <div class="page-title" id="topTitle">🏨 Admin Dashboard</div>
+    <div class="sidebar">
+      <nav class="nav">
+        <div class="nav-section">Overview</div>
+        <button class="nav-item active" onclick="showPage('overview',this)"><span class="icon">📊</span>
+          Dashboard</button>
+        <div class="nav-section">Manage</div>
+        <button class="nav-item" onclick="showPage('services',this)"><span class="icon">🔧</span> Service
+          Requests</button>
+        <button class="nav-item" onclick="showPage('bookings',this)"><span class="icon">🏋️</span> Facility
+          Bookings</button>
+        <button class="nav-item" onclick="showPage('lostfound',this)"><span class="icon">🔍</span> Lost &amp;
+          Found</button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="logout-btn" onclick="doLogout()">Sign Out</button>
       </div>
     </div>
-    <div class="content">
 
-      <!-- OVERVIEW -->
-      <div class="page active" id="page-overview">
-        <div class="stats-grid">
-          <div class="stat-card c1">
-            <div class="stat-icon">👥</div>
-            <div class="stat-num" id="as-students">—</div>
-            <div class="stat-lbl">Students</div>
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+          <div class="page-title" id="topTitle">🏨 Admin Dashboard</div>
+        </div>
+      </div>
+      <div class="content">
+
+        <!-- OVERVIEW -->
+        <div class="page active" id="page-overview">
+          <div class="stats-grid">
+            <div class="stat-card c1">
+              <div class="stat-icon">👥</div>
+              <div class="stat-num" id="as-students">—</div>
+              <div class="stat-lbl">Students</div>
+            </div>
+            <div class="stat-card c2">
+              <div class="stat-icon">📋</div>
+              <div class="stat-num" id="as-total">—</div>
+              <div class="stat-lbl">Total Requests</div>
+            </div>
+            <div class="stat-card c3">
+              <div class="stat-icon">⏳</div>
+              <div class="stat-num" id="as-pending">—</div>
+              <div class="stat-lbl">Pending</div>
+            </div>
+            <div class="stat-card c4">
+              <div class="stat-icon">🏋️</div>
+              <div class="stat-num" id="as-bookings">—</div>
+              <div class="stat-lbl">Bookings</div>
+            </div>
+            <div class="stat-card c5">
+              <div class="stat-icon">🔍</div>
+              <div class="stat-num" id="as-lf">—</div>
+              <div class="stat-lbl">Open Cases</div>
+            </div>
           </div>
-          <div class="stat-card c2">
-            <div class="stat-icon">📋</div>
-            <div class="stat-num" id="as-total">—</div>
-            <div class="stat-lbl">Total Requests</div>
-          </div>
-          <div class="stat-card c3">
-            <div class="stat-icon">⏳</div>
-            <div class="stat-num" id="as-pending">—</div>
-            <div class="stat-lbl">Pending</div>
-          </div>
-          <div class="stat-card c4">
-            <div class="stat-icon">🏋️</div>
-            <div class="stat-num" id="as-bookings">—</div>
-            <div class="stat-lbl">Bookings</div>
-          </div>
-          <div class="stat-card c5">
-            <div class="stat-icon">🔍</div>
-            <div class="stat-num" id="as-lf">—</div>
-            <div class="stat-lbl">Open Cases</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+            <div class="card">
+              <div class="card-title">Latest Service Requests</div>
+              <div class="card-sub">5 most recent submissions</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Category</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="overviewTable">
+                    <tr>
+                      <td colspan="4" style="text-align:center;color:var(--muted);padding:24px">Loading…</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Platform Status</div>
+              <div class="card-sub">All modules operational</div>
+              <div class="status-row">
+                <div class="status-item"><span>🔧 Service Module</span><span class="badge resolved">Online</span></div>
+                <div class="status-item"><span>🏋️ Booking Module</span><span class="badge resolved">Online</span></div>
+                <div class="status-item"><span>🔍 Lost &amp; Found</span><span class="badge resolved">Online</span>
+                </div>
+                <div class="status-item"><span>🗄️ MongoDB Database</span><span class="badge resolved">Online</span>
+                </div>
+                <div class="status-item"><span>🔐 Auth / OTP</span><span class="badge resolved">Online</span></div>
+              </div>
+            </div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+
+        <!-- SERVICE REQUESTS -->
+        <div class="page" id="page-services">
           <div class="card">
-            <div class="card-title">Latest Service Requests</div>
-            <div class="card-sub">5 most recent submissions</div>
+            <div class="card-title">All Service Requests</div>
+            <div class="card-sub">Manage and update status of all hostel service requests</div>
+            <div class="filter-row">
+              <button class="filter-btn active" onclick="filterSrv('all',this)">All</button>
+              <button class="filter-btn" onclick="filterSrv('Pending',this)">Pending</button>
+              <button class="filter-btn" onclick="filterSrv('In Progress',this)">In Progress</button>
+              <button class="filter-btn" onclick="filterSrv('Resolved',this)">Resolved</button>
+            </div>
             <div class="table-wrap">
               <table>
                 <thead>
                   <tr>
                     <th>Student</th>
                     <th>Category</th>
+                    <th>Description</th>
+                    <th>Block / Room</th>
                     <th>Priority</th>
-                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Update Status</th>
                   </tr>
                 </thead>
-                <tbody id="overviewTable">
+                <tbody id="adminSrvTable">
                   <tr>
-                    <td colspan="4" style="text-align:center;color:var(--muted);padding:24px">Loading…</td>
+                    <td colspan="7" style="text-align:center;color:var(--muted);padding:30px">Loading…</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
+        </div>
+
+        <!-- BOOKINGS -->
+        <div class="page" id="page-bookings">
           <div class="card">
-            <div class="card-title">Platform Status</div>
-            <div class="card-sub">All modules operational</div>
-            <div class="status-row">
-              <div class="status-item"><span>🔧 Service Module</span><span class="badge resolved">Online</span></div>
-              <div class="status-item"><span>🏋️ Booking Module</span><span class="badge resolved">Online</span></div>
-              <div class="status-item"><span>🔍 Lost &amp; Found</span><span class="badge resolved">Online</span></div>
-              <div class="status-item"><span>🗄️ MongoDB Database</span><span class="badge resolved">Online</span></div>
-              <div class="status-item"><span>🔐 Auth / OTP</span><span class="badge resolved">Online</span></div>
+            <div class="card-title">All Facility Bookings</div>
+            <div class="card-sub">Overview of all hostel facility reservations</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Student Info</th>
+                    <th>Stats (Tot/Can/NS)</th>
+                    <th>Facility</th>
+                    <th>Date &nbsp;/&nbsp; Time Slot</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adminBookTable">
+                  <tr>
+                    <td colspan="6" style="text-align:center;color:var(--muted);padding:30px">Loading…</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- SERVICE REQUESTS -->
-      <div class="page" id="page-services">
-        <div class="card">
-          <div class="card-title">All Service Requests</div>
-          <div class="card-sub">Manage and update status of all hostel service requests</div>
-          <div class="filter-row">
-            <button class="filter-btn active" onclick="filterSrv('all',this)">All</button>
-            <button class="filter-btn" onclick="filterSrv('Pending',this)">Pending</button>
-            <button class="filter-btn" onclick="filterSrv('In Progress',this)">In Progress</button>
-            <button class="filter-btn" onclick="filterSrv('Resolved',this)">Resolved</button>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Category</th>
-                  <th>Description</th>
-                  <th>Block / Room</th>
-                  <th>Priority</th>
-                  <th>Date</th>
-                  <th>Update Status</th>
-                </tr>
-              </thead>
-              <tbody id="adminSrvTable">
-                <tr>
-                  <td colspan="7" style="text-align:center;color:var(--muted);padding:30px">Loading…</td>
-                </tr>
-              </tbody>
-            </table>
+        <!-- LOST & FOUND -->
+        <div class="page" id="page-lostfound">
+          <div class="card">
+            <div class="card-title">🔍 Lost &amp; Found — All Reports</div>
+            <div class="card-sub">All submitted incident reports from hostel students</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Photo</th>
+                    <th>Student</th>
+                    <th>Type</th>
+                    <th>Item</th>
+                    <th>Location</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adminLFTable">
+                  <tr>
+                    <td colspan="9" style="text-align:center;color:var(--muted);padding:30px">Loading…</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- BOOKINGS -->
-      <div class="page" id="page-bookings">
-        <div class="card">
-          <div class="card-title">All Facility Bookings</div>
-          <div class="card-sub">Overview of all hostel facility reservations</div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Student Info</th>
-                  <th>Stats (Tot/Can/NS)</th>
-                  <th>Facility</th>
-                  <th>Date &nbsp;/&nbsp; Time Slot</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="adminBookTable">
-                <tr>
-                  <td colspan="6" style="text-align:center;color:var(--muted);padding:30px">Loading…</td>
-                </tr>
-              </tbody>
-            </table>
+        <!-- AI MATCH MODAL (ADMIN) -->
+        <div id="matchModal"
+          style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2000; align-items:center; justify-content:center;">
+          <div
+            style="background:var(--surface); padding:24px; border-radius:12px; width:90%; max-width:550px; box-shadow:0 8px 30px rgba(0,0,0,0.3);">
+            <h3
+              style="margin-top:0; color:var(--text); display:flex; justify-content:space-between; align-items:center;">
+              <span>🤖 AI Confidence Matches</span>
+              <button onclick="document.getElementById('matchModal').style.display='none'"
+                style="background:none;border:none;cursor:pointer;font-size:1.5rem;color:var(--text);">&times;</button>
+            </h3>
+            <div style="font-size:0.9rem; color:var(--muted); margin-bottom:15px;">Our AI detected the following
+              potential matches for this item based on visual similarity.</div>
+            <div id="matchModalContent"
+              style="max-height:60vh; overflow-y:auto; margin:15px 0; display:flex; flex-direction:column; gap:12px;">
+            </div>
+            <div style="text-align:right;">
+              <button class="btn cancel-btn" style="background:var(--muted); border:none;"
+                onclick="document.getElementById('matchModal').style.display='none'">Dismiss</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- LOST & FOUND -->
-      <div class="page" id="page-lostfound">
-        <div class="card">
-          <div class="card-title">🔍 Lost &amp; Found — All Reports</div>
-          <div class="card-sub">All submitted incident reports from hostel students</div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Photo</th>
-                  <th>Student</th>
-                  <th>Type</th>
-                  <th>Item</th>
-                  <th>Location</th>
-                  <th>Description</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="adminLFTable">
-                <tr>
-                  <td colspan="9" style="text-align:center;color:var(--muted);padding:30px">Loading…</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
-
-      <!-- AI MATCH MODAL (ADMIN) -->
-      <div id="matchModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2000; align-items:center; justify-content:center;">
-        <div style="background:var(--surface); padding:24px; border-radius:12px; width:90%; max-width:550px; box-shadow:0 8px 30px rgba(0,0,0,0.3);">
-          <h3 style="margin-top:0; color:var(--text); display:flex; justify-content:space-between; align-items:center;">
-            <span>🤖 AI Confidence Matches</span>
-            <button onclick="document.getElementById('matchModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.5rem;color:var(--text);">&times;</button>
-          </h3>
-          <div style="font-size:0.9rem; color:var(--muted); margin-bottom:15px;">Our AI detected the following potential matches for this item based on visual similarity.</div>
-          <div id="matchModalContent" style="max-height:60vh; overflow-y:auto; margin:15px 0; display:flex; flex-direction:column; gap:12px;"></div>
-          <div style="text-align:right;">
-            <button class="btn cancel-btn" style="background:var(--muted); border:none;" onclick="document.getElementById('matchModal').style.display='none'">Dismiss</button>
-          </div>
-        </div>
-      </div>
-
     </div>
-  </div>
   </div>
 
   <script>
@@ -803,7 +814,12 @@
     }
 
     async function loadStats() {
-      const d = await fetch('/api/admin/stats', { credentials: 'include' }).then(r => r.json());
+      const res = await fetch('/api/admin/stats', { credentials: 'include' });
+      if (!res.ok) {
+        console.error('Stats fetch failed:', res.status);
+        return;  // don't crash, just skip
+      }
+      const d = await res.json();
       const s = d.stats || {};
       document.getElementById('as-students').textContent = s.students ?? '—';
       document.getElementById('as-total').textContent = s.totalRequests ?? '—';
@@ -821,7 +837,7 @@
     <tr><td style="font-weight:600">${r.user_name || '—'}</td>
     <td>${catIcons[r.category] || '⚙️'} ${r.category}</td>
     <td><span class="badge ${r.priority.toLowerCase()}">${r.priority}</span></td>
-    <td><span class="badge ${r.status === 'Pending' ? 'pending' : r.status === 'Resolved' ? 'resolved' : 'progress'}">${r.status}</span></td>
+    <td><span class="badge ${r.status === 'pending' ? 'pending' : r.status === 'completed' ? 'resolved' : 'progress'}">${r.status === 'pending' ? 'Pending' : r.status === 'in_progress' ? 'In Progress' : r.status === 'completed' ? 'Resolved' : r.status}</span></td>
     </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">No requests</td></tr>';
     }
 
@@ -843,9 +859,9 @@
       <td style="font-size:0.72rem;color:var(--muted)">${new Date(r.created_at * 1000).toLocaleDateString()}</td>
       <td>
         <select class="status-sel" onchange="updateStatus('${r.id}',this.value)">
-          <option ${r.status === 'Pending' ? 'selected' : ''}>Pending</option>
-          <option ${r.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-          <option ${r.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
+          <option value="Pending" ${r.status === 'pending' ? 'selected' : ''}>Pending</option>
+          <option value="In Progress" ${r.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+          <option value="Resolved" ${r.status === 'completed' ? 'selected' : ''}>Resolved</option>
         </select>
       </td></tr>`).join('')
         : '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">No requests found</td></tr>';
@@ -924,22 +940,23 @@
     }
 
     async function findAdminMatches(id) {
-       document.getElementById('matchModalContent').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Analyzing images...</div>';
-       document.getElementById('matchModal').style.display = 'flex';
-       
-       try {
-         const matchRes = await fetch('/api/match-image', { credentials: 'include',  
-            method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ id: id })
-         });
-         const mData = await matchRes.json();
-         
-         const mContent = document.getElementById('matchModalContent');
-         if (mData.matches && mData.matches.length > 0) {
-            mContent.innerHTML = mData.matches.map(m => {
-                const simScore = (Math.max(m.score, 0.0) * 100).toFixed(1);
-                const isHigh = m.score >= 0.85;
-                return `
+      document.getElementById('matchModalContent').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Analyzing images...</div>';
+      document.getElementById('matchModal').style.display = 'flex';
+
+      try {
+        const matchRes = await fetch('/api/match-image', {
+          credentials: 'include',
+          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id })
+        });
+        const mData = await matchRes.json();
+
+        const mContent = document.getElementById('matchModalContent');
+        if (mData.matches && mData.matches.length > 0) {
+          mContent.innerHTML = mData.matches.map(m => {
+            const simScore = (Math.max(m.score, 0.0) * 100).toFixed(1);
+            const isHigh = m.score >= 0.85;
+            return `
                 <div style="border:1px solid ${isHigh ? 'var(--amber)' : 'var(--border)'}; padding:12px; border-radius:8px; display:flex; flex-direction:column; gap:8px; background:var(--surface2);">
                   <div style="display:flex; gap:12px; align-items:center;">
                       <div style="flex:1; text-align:center;">
@@ -973,32 +990,33 @@
                       </div>
                   </div>
                 </div>`;
-            }).join('');
-         } else {
-            mContent.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No matching images found above confidence threshold.</div>';
-         }
-       } catch (e) {
-          document.getElementById('matchModalContent').innerHTML = '<div style="color:var(--rust); text-align:center; padding:20px;">Failed to find matches. Ensure AI service is running.</div>';
-       }
+          }).join('');
+        } else {
+          mContent.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No matching images found above confidence threshold.</div>';
+        }
+      } catch (e) {
+        document.getElementById('matchModalContent').innerHTML = '<div style="color:var(--rust); text-align:center; padding:20px;">Failed to find matches. Ensure AI service is running.</div>';
+      }
     }
 
     async function confirmAdminMatch(sourceId, targetId) {
-       if(!confirm('Are you sure you want to mark these items as a match? Both cases will be closed.')) return;
-       try {
-         const res = await fetch('/api/confirm-match', { credentials: 'include', 
-            method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ source_id: sourceId, target_id: targetId })
-         });
-         const d = await res.json();
-         if(d.error) alert(d.error);
-         else {
-            alert('Match confirmed successfully!');
-            document.getElementById('matchModal').style.display = 'none';
-            loadAdminLF(); loadStats();
-         }
-       } catch(e) {
-         alert("Error confirming match.");
-       }
+      if (!confirm('Are you sure you want to mark these items as a match? Both cases will be closed.')) return;
+      try {
+        const res = await fetch('/api/confirm-match', {
+          credentials: 'include',
+          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source_id: sourceId, target_id: targetId })
+        });
+        const d = await res.json();
+        if (d.error) alert(d.error);
+        else {
+          alert('Match confirmed successfully!');
+          document.getElementById('matchModal').style.display = 'none';
+          loadAdminLF(); loadStats();
+        }
+      } catch (e) {
+        alert("Error confirming match.");
+      }
     }
 
     function goHome() {

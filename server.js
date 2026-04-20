@@ -384,6 +384,54 @@ app.get('/api/profile', requireAuth, async (req, res) => {
 // ════════════════════════════════════════════════════════════════════
 app.use('/api/services', requireAuth, require('./routes/serviceRoutes'));
 app.use('/api/bookings', requireAuth, require('./routes/bookingRoutes'));
+// PATCH /api/services/:id  — update service request status (admin)
+app.patch('/api/services/:id', requireAuth, async (req, res) => {
+  if (req.session.userRole !== 'admin') {
+    return res.status(403).json({ error: 'Admin only.' });
+  }
+
+  const { status } = req.body;
+
+  // Maps UI display values → DB enum values (ServiceRequest schema uses lowercase)
+  const statusMap = {
+    'Pending': 'pending',
+    'In Progress': 'in_progress',
+    'Resolved': 'completed',
+    'Escalated': 'escalated'
+  };
+
+  const dbStatus = statusMap[status];
+  if (!dbStatus) {
+    return res.status(400).json({ error: `Invalid status. Allowed: ${Object.keys(statusMap).join(', ')}` });
+  }
+
+  try {
+    const updated = await ServiceRequest.findByIdAndUpdate(
+      req.params.id,
+      { status: dbStatus, updated_at: Math.floor(Date.now() / 1000) },
+      { new: true, runValidators: true }
+    );
+    if (!updated) return res.status(404).json({ error: 'Service request not found.' });
+    const mongoose = require('mongoose');
+    const User = mongoose.model('User');
+    const reqCreator = await User.findById(updated.user_id);
+    if (reqCreator) {
+      await sendEmail(
+        reqCreator.email,
+        'Request Status Updated',
+        emailTemplate(
+          'Status Update',
+          '#f59e0b',
+          `Hello ${reqCreator.name},<br><br>Your <b>${updated.category}</b> request status has been updated to <b>${status}</b>.`
+        )
+      );
+    }
+    res.json({ success: true, request: updated });
+  } catch (err) {
+    console.error('Service status update error:', err);
+    res.status(500).json({ error: 'Update failed.' });
+  }
+});
 
 // ── Admin Unblock Endpoint (kept from legacy bookings) ──
 app.patch('/api/admin/users/:id/unblock', requireAuth, async (req, res) => {
