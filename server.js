@@ -564,7 +564,7 @@ app.post("/api/lost-found", requireAuth, upload.any(), async (req, res) => {
   }
 });
 
-app.post('/api/match-image', requireAuth, async (req, res) => {
+aapp.post('/api/match-image', requireAuth, async (req, res) => {
   const { id } = req.body;
   try {
     const item = await LostFound.findById(id);
@@ -575,6 +575,47 @@ app.post('/api/match-image', requireAuth, async (req, res) => {
       status: 'Open',
       _id: { $ne: item._id }
     });
+
+    // On-demand embedding: if item has no embedding yet (background job still running),
+    // generate it synchronously right now before attempting match
+    const ensureEmbedding = async (doc) => {
+      if (doc.embedding && doc.embedding.length > 0) return doc;
+      if (!AI_URL || !doc.image) return doc;
+      try {
+        let b64 = '';
+        if (doc.image.data) {
+          b64 = doc.image.data;
+        } else if (typeof doc.image === 'string' && doc.image.startsWith('http')) {
+          const imgResp = await fetch(doc.image, { signal: AbortSignal.timeout(15000) });
+          const buf = await imgResp.arrayBuffer();
+          b64 = Buffer.from(buf).toString('base64');
+        }
+        if (!b64) return doc;
+        const embedRes = await fetch(`${AI_URL}/embed`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image_base64: b64 }),
+          signal: AbortSignal.timeout(30000)
+        });
+        if (embedRes.ok) {
+          const embedData = await embedRes.json();
+          if (embedData.embedding) {
+            doc.embedding = embedData.embedding;
+            await doc.save();
+            console.log(`[match-image] On-demand embedding generated for ${doc._id}`);
+          }
+        }
+      } catch (e) {
+        console.error(`[match-image] On-demand embed failed for ${doc._id}:`, e.message);
+      }
+      return doc;
+    };
+
+    // Ensure source item has embedding
+    await ensureEmbedding(item);
+
+    // Ensure all candidates have embeddings in parallel for speed
+    await Promise.all(candidates.map(c => ensureEmbedding(c)));
 
     const validCandidates = candidates.filter(c => c.embedding && c.embedding.length > 0);
 
