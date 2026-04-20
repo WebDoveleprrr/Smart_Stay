@@ -24,7 +24,7 @@ async function sendEmail(to, subject, htmlContent, attachments = []) {
   if (!to || !to.includes('@')) return;
   const msg = {
     to,
-    from: process.env.EMAIL_USER || "brohitchowdary5@gmail.com",
+    from: process.env.EMAIL_USER || "srikarthikeyabikkina@gmail.com",
     subject,
     html: htmlContent,
     trackingSettings: {
@@ -41,7 +41,7 @@ async function sendEmail(to, subject, htmlContent, attachments = []) {
     console.log(`[MAIL SKIPPED - no key] To: ${to} | Subject: ${subject}`);
     return;
   }
-  
+
   try {
     await sgMail.send(msg);
     console.log(`Email sent to ${to}`);
