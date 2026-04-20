@@ -564,7 +564,7 @@ app.post("/api/lost-found", requireAuth, upload.any(), async (req, res) => {
   }
 });
 
-aapp.post('/api/match-image', requireAuth, async (req, res) => {
+app.post('/api/match-image', requireAuth, async (req, res) => {
   const { id } = req.body;
   try {
     const item = await LostFound.findById(id);
