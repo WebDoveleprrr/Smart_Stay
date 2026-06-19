@@ -1,211 +1,366 @@
-    Smart Stay — Intelligent Hostel Management System
+# 🏨 Smart Stay
 
-Version 5.0 | Full-Stack + AI Enabled | Deployed on Render
+### Smart Accommodation & Guest Service Management Platform
 
-    Project Overview
+Smart Stay is a full-stack accommodation management system designed to streamline resident services, facility reservations, maintenance requests, and lost & found management through a centralized web platform.
 
-Smart Stay is a complete hostel management platform designed to replace manual processes with a modern, automated system.
+The platform enables residents to securely register, verify accounts through OTP authentication, book facilities, raise service requests, report lost or found items, and receive automated email notifications, while administrators can monitor and manage all activities through a dedicated dashboard.
 
-Instead of handling things like maintenance requests, bookings, or lost items on paper or WhatsApp, everything is managed through a single web application.
+---
+
+## ✨ Features
+
+### 🔐 Secure Authentication
+
+Smart Stay provides secure user authentication with email verification.
+
+Features include:
+
+* User Registration
+* User Login
+* Email OTP Verification
+* OTP Expiration Timer
+* Resend OTP Support
+* Session Management
+* Admin Authentication
+
+---
+
+### 👤 Resident Dashboard
+
+Residents can access a personalized dashboard to:
+
+* View account information
+* Submit service requests
+* Book facilities
+* Report lost items
+* Report found items
+* Track submitted requests
+
+---
+
+### 🛠 Service Request Management
+
+Residents can submit maintenance and support requests.
+
+Example:
+
+```text
+Electrical Issue
+
+Plumbing Issue
+
+Housekeeping Request
+
+General Maintenance
+```
+
+Features:
+
+* Request Submission
+* Request Tracking
+* Email Confirmation
+* Admin Notifications
+
+---
+
+### 🏢 Facility Booking System
+
+Book shared accommodation facilities through an easy-to-use reservation system.
+
+Examples:
+
+```text
+Conference Room
+
+Study Room
+
+Recreation Area
+
+Community Hall
+```
+
+Features:
+
+* Facility Reservation
+* Date Selection
+* Booking Management
+* Confirmation Emails
+
+---
+
+### 🔍 Lost & Found Management
+
+A complete system for handling misplaced items.
+
+Residents can:
+
+* Report Lost Items
+* Report Found Items
+* Upload Item Images
+* Provide Descriptions
+* Specify Locations
+
+Images are automatically included in notifications sent to administrators.
+
+---
+
+### 📧 Automated Email Notifications
+
+Smart Stay automatically sends emails for:
+
+* Account Registration
+* OTP Verification
+* Service Requests
+* Facility Bookings
+* Lost Item Reports
+* Found Item Reports
+
+Features:
+
+* HTML Email Templates
+* Image Attachments
+* User Confirmations
+* Admin Alerts
+
+---
+
+### 🛡 Admin Dashboard
+
+Administrators can manage the entire platform through a centralized dashboard.
+
+Capabilities include:
+
+* View Registered Users
+* Monitor Service Requests
+* Manage Facility Bookings
+* Review Lost & Found Reports
+* Access Uploaded Images
+* Track Resident Activities
+
+---
+
+## 🏛 System Architecture
+
+```text
+                    ┌───────────────┐
+                    │   Frontend    │
+                    │ HTML/CSS/JS   │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │ Express Server│
+                    │   Node.js     │
+                    └───────┬───────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        ▼                   ▼                   ▼
+
+ ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+ │ Auth Module │    │ Service Req │    │ Facility    │
+ │ OTP System  │    │ Management  │    │ Booking     │
+ └──────┬──────┘    └──────┬──────┘    └──────┬──────┘
+        │                  │                  │
+        └──────────┬───────┴──────────┬───────┘
+                   ▼                  ▼
+
+           ┌─────────────┐    ┌─────────────┐
+           │ Lost & Found│    │ Email System│
+           │   Module    │    │ Notifications│
+           └──────┬──────┘    └──────┬──────┘
+                  │                  │
+                  └──────────┬───────┘
+                             ▼
+
+                    ┌─────────────┐
+                    │   MongoDB   │
+                    └─────────────┘
+```
+
+---
+
+## 🛠 Tech Stack
+
+### Frontend
+
+* HTML5
+* CSS3
+* JavaScript
+
+### Backend
+
+* Node.js
+* Express.js
+
+### Database
+
+* MongoDB
+* Mongoose
+
+### Authentication
+
+* Email OTP Verification
+* Session Management
+
+### Email Services
+
+* Nodemailer
+* SMTP Integration
+
+### Deployment Ready
+
+* Environment Variable Configuration
+* MongoDB Integration
+* Cloud Deployment Support
+
+---
+
+## 📊 Platform Capabilities
+
+| Capability       | Description                        |
+| ---------------- | ---------------------------------- |
+| Authentication   | Secure OTP-based user verification |
+| Service Requests | Maintenance and support management |
+| Facility Booking | Shared facility reservation system |
+| Lost & Found     | Item reporting and tracking        |
+| Email Automation | Automated notifications and alerts |
+| Admin Dashboard  | Centralized management portal      |
+| Image Uploads    | Attach item images to reports      |
+
+---
+
+## 📁 Project Structure
+
+```text
+Smart-Stay/
+│
+├── public/
+│   ├── css/
+│   ├── js/
+│   ├── images/
+│   └── uploads/
+│
+├── views/
+│   ├── login/
+│   ├── register/
+│   ├── dashboard/
+│   ├── admin/
+│   ├── service/
+│   ├── booking/
+│   └── lost-found/
+│
+├── models/
+│   ├── User.js
+│   ├── Booking.js
+│   ├── ServiceRequest.js
+│   ├── LostItem.js
+│   └── FoundItem.js
+│
+├── routes/
+├── middleware/
+├── utils/
+│
+├── .env
+├── server.js
+└── package.json
+```
+
+---
+
+## 🚀 Local Setup
+
+### Clone Repository
+
+```bash
+git clone https://github.com/your-username/Smart-Stay.git
+
+cd Smart-Stay
+```
+
+---
+
+### Install Dependencies
+
+```bash
+npm install
+```
+
+---
+
+### Configure Environment Variables
+
+Create a `.env` file:
+
+```env
+PORT=3000
+
+MONGO_URI=your_mongodb_connection_string
+
+EMAIL_USER=your_email
+
+EMAIL_PASS=your_email_password
+
+SESSION_SECRET=your_secret_key
+```
+
+---
+
+### Start Application
+
+```bash
+npm start
+```
+
+or
+
+```bash
+node server.js
+```
+
+Application URL:
+
+```text
+http://localhost:3000
+```
+
+---
+
+## 📈 Future Improvements
+
+* Role-Based Access Control
+* Real-Time Notifications
+* Mobile Application
+* Analytics Dashboard
+* Complaint Resolution Workflow
+* QR-Based Resident Verification
+* Online Payments
+* Facility Availability Calendar
+
+---
+
+## 👨‍💻 Author
+
+**Rohit Chowdary**
+
+Computer Science Engineering Student
+
+Built to improve accommodation management through secure authentication, service automation, facility booking, and resident support systems.
+
+---
+
+## ⭐ Why Smart Stay?
+
+Smart Stay is more than a traditional accommodation management system.
 
 It combines:
 
-A Node.js backend (API + logic)
-MongoDB cloud database
-Cloudinary for image storage
-A separate Python AI service for image matching
-    Who uses it?
-    Students
+* Secure OTP Authentication
+* Service Request Management
+* Facility Reservations
+* Lost & Found Tracking
+* Automated Email Notifications
+* Admin Monitoring Tools
+* MongoDB-Powered Data Management
 
-Students can:
-
-Raise service requests (electrician, cleaning, etc.)
-Book facilities like gym or study hall
-Report lost or found items
-Track all their activity from a dashboard
-    Admins
-
-Admins get a separate control panel where they can:
-
-Manage all students
-Approve/update service requests
-Monitor bookings
-Handle lost & found cases
-View system-wide stats
-Block/unblock users
-    Live Deployment
-Main App: https://smart-stay-0gxx.onrender.com
-AI Service: https://smart-stay-1.onrender.com
-Health Check: https://smart-stay-1.onrender.com/health
-
-    Note: Since this uses Render’s free tier, services may sleep.
-First request after inactivity may take 30–90 seconds.
-
-    Technology Stack
-Frontend
-HTML, CSS, JavaScript
-Responsive layout using Grid & Flexbox
-Clean typography using Google Fonts
-Backend
-Node.js + Express
-MongoDB + Mongoose
-Sessions with connect-mongo
-Multer for file uploads
-bcrypt for password security
-Cloud Services
-Cloudinary → image storage
-SendGrid → email system
-    AI Microservice
-Python + FastAPI
-PyTorch (MobileNetV2 model)
-Pillow + NumPy
-Used for image similarity matching
-    System Architecture
-Frontend (HTML pages)
-→ talks to Node.js backend (REST API)
-→ stores data in MongoDB
-→ sends images to AI service
-→ AI returns embeddings & matches
-    Features
-    Authentication & Security
-Student registration with validation
-Login with OTP-based 2FA
-Admin login without OTP
-Secure sessions stored in MongoDB
-    Dashboard
-Shows:
-Service requests count
-Bookings
-Lost & found stats
-Includes recent activity
-Fully responsive (mobile + desktop)
-    Service Requests
-Categories: Electrician, Plumber, etc.
-Priority levels: Normal / High / Urgent
-Status tracking:
-Pending → In Progress → Resolved
-    Facility Booking
-Book gym, study hall, etc.
-Prevents double booking
-Tracks booking status
-Includes:
-cancellation penalties
-no-show detection
-    Lost & Found (AI Powered)
-
-This is the core highlight feature.
-
-Flow:
-Student uploads item + image
-Image stored (Cloudinary or base64)
-AI generates embedding (background process)
-Matching compares items using cosine similarity
-    AI Matching
-Uses MobileNetV2 model
-Generates feature vector (1280 dimensions)
-Matches items with similarity ≥ 75%
-Shows top 3 matches
-    Email System
-OTP emails
-Booking confirmations
-Notifications
-Match confirmations
-
-If SendGrid is not configured → emails are skipped safely
-
-    Reliability Rating System
-
-Each student has a rating out of 5:
-
-Action	Effect
-Booking used	+0.2
-Cancelled	−0.5
-No-show	−1.0
-
-If rating < 3 → user gets blocked
-
-    AI Pipeline (Simplified)
-Image uploaded
-Converted to base64
-Sent to /embed
-Processed by MobileNetV2
-Feature vector stored
-Matching uses cosine similarity
-    API Overview
-Auth
-/api/register
-/api/login
-/api/verify-otp
-Services
-/api/services
-Bookings
-/api/bookings
-Lost & Found
-/api/lost-found
-/api/match-image
-Admin
-/api/admin/...
-AI
-/embed
-/similarity
-/health
-    Environment Variables
-
-You need:
-
-MongoDB URI
-Session secret
-SendGrid key
-Cloudinary config
-AI service URL
-
-(Full list unchanged)
-
-    Project Structure
-smart-stay/
-├── server.js
-├── package.json
-├── runtime.txt
-├── index.html
-├── login.html
-├── dashboard.html
-├── admin-dashboard.html
-├── ai-service/
-│   ├── main.py
-│   └── requirements.txt
-    Local Setup
-Install dependencies
-Configure .env
-Run backend
-Run AI service
-    Deployment
-
-Two services on Render:
-
-Node.js backend
-Python AI service
-
-Optional:
-
-Use UptimeRobot to keep AI awake
-    Admin Credentials
-
-Email: bikkinarohitchowdary@gmail.com
-
-Password: Rohit@1234
-
-    Known Limitations
-Free tier → cold starts
-AI embedding is async → slight delay
-Base64 storage if Cloudinary missing
-Email disabled if API key missing
-    Final Note
-
-Smart Stay is designed to:
-
-automate hostel operations
-reduce manual effort
-integrate AI for smarter workflows
-    Smart Stay v5.0
-
-Built for real-world hostel automation with AI integration
+into a unified platform that simplifies accommodation operations and enhances the resident experience.
